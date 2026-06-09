@@ -175,6 +175,58 @@ h4 {
    padding: 13px 24px;
 }
 
+.user-icon {
+   position: relative;
+}
+
+.user-icon-hover-box {
+   font-weight: normal;
+   color: var(--clr-text);
+   position: absolute;
+   display: none;
+   top: 0;
+   right: 0;
+   z-index: 10;
+   padding-top: 3rem;
+}
+
+.user-icon:hover .user-icon-hover-box {
+   display: block;
+}
+
+.user-icon-hover-box ul {
+   border-radius: 8px;
+   list-style: none;
+   margin: 0;
+   padding: .5rem;
+   background-color: var(--clr-bg);
+   font-size: .92rem;
+   animation: fadeIn 0.4s var(--ease);
+}
+
+@keyframes fadeIn {
+   from {
+      opacity: 0;
+      transform: translateY(-5px);
+   }
+   to {
+      opacity: 1;
+      transform: translateY(0);
+   }
+}
+
+.user-icon-hover-box ul li {
+   padding: .25rem .5rem;
+   display: flex;
+   align-items: center;
+   gap: 3px;
+   cursor: pointer;
+}
+
+.user-icon-hover-box ul li:hover {
+   background-color: var(--clr-bg-light);
+}
+
 /* ── Section Shared ── */
 .section-inner {
    max-width: var(--max-w);

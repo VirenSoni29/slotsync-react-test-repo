@@ -26,14 +26,14 @@
    color: var(--clr-text-2);
 }
 
-.auth-nav-hint a {
+.auth-nav-hint .a {
    color: var(--clr-accent-2);
    font-weight: 600;
    margin-left: 6px;
    transition: color var(--transition);
 }
 
-.auth-nav-hint a:hover {
+.auth-nav-hint .a:hover {
    color: var(--clr-text);
 }
 
@@ -103,7 +103,7 @@
 .panel-features {
    display: flex;
    flex-direction: column;
-   gap: 14px;
+   gap: 17px;
 }
 
 .panel-feature {
@@ -114,8 +114,9 @@
    color: var(--clr-text-2);
 }
 
-.panel-feature i {
-   font-size: 1.1rem;
+.panel-feature svg {
+   width: 1.1rem;
+   height: 1.1rem;
    color: var(--clr-green);
    flex-shrink: 0;
 }
@@ -130,7 +131,7 @@
 .panel-circle {
    position: absolute;
    border-radius: 50%;
-   border: 1px solid rgba(108, 99, 255, 0.12);
+   border: 1px solid rgba(107, 99, 255, 0.25);
 }
 
 .c1 {
@@ -145,7 +146,7 @@
    height: 300px;
    bottom: -80px;
    right: -60px;
-   border-color: rgba(108, 99, 255, 0.07);
+   border-color: rgba(108, 99, 255, 0.146);
 }
 
 /* ── Right form panel ── */
@@ -188,30 +189,6 @@
 .auth-card-header p strong {
    color: var(--clr-accent-2);
    font-weight: 600;
-}
-
-/* ── Error / Success banners ── */
-.auth-error,
-.auth-success {
-   display: flex;
-   align-items: center;
-   gap: 10px;
-   padding: 12px 16px;
-   border-radius: var(--radius);
-   font-size: 0.88rem;
-   margin-bottom: 20px;
-}
-
-.auth-error {
-   background: rgba(248, 113, 113, 0.1);
-   border: 1px solid rgba(248, 113, 113, 0.25);
-   color: var(--clr-red);
-}
-
-.auth-success {
-   background: rgba(34, 211, 165, 0.1);
-   border: 1px solid rgba(34, 211, 165, 0.25);
-   color: var(--clr-green);
 }
 
 /* ── Form fields ── */
@@ -260,10 +237,11 @@
    align-items: center;
 }
 
-.field-input-wrap>i {
+.field-input-wrap>.input-icon {
    position: absolute;
    left: 14px;
-   font-size: 1rem;
+   width: 1.05rem;
+   height: 1.05rem;
    color: var(--clr-text-3);
    pointer-events: none;
    transition: color var(--transition);
@@ -278,7 +256,7 @@
    color: var(--clr-text);
    font-family: var(--font-body);
    font-size: 0.95rem;
-   padding: 11px 44px 11px 42px;
+   padding: 9px 44px 9px 42px;
    outline: none;
    transition: border-color var(--transition), box-shadow var(--transition);
 }
@@ -292,8 +270,8 @@
    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
 }
 
-.field-input-wrap input:focus+i,
-.field-input-wrap:focus-within>i:first-child {
+.field-input-wrap input:focus+svg,
+.field-input-wrap:focus-within>svg:first-child {
    color: var(--clr-accent-2);
 }
 
@@ -312,6 +290,7 @@
    padding: 4px;
    display: flex;
    align-items: center;
+   z-index: 5;
    transition: color var(--transition);
 }
 
@@ -319,8 +298,8 @@
    color: var(--clr-text-2);
 }
 
-.field-toggle i {
-   font-size: 1rem;
+.field-toggle svg {
+   width: 1rem;
 }
 
 /* validation states */
@@ -336,6 +315,12 @@
    font-size: 0.78rem;
    color: var(--clr-red);
    min-height: 16px;
+   opacity: 0;
+   transition: opacity var(--transition);
+}
+
+.field-error.show {
+   opacity: 1;
 }
 
 /* ── Password strength ── */
@@ -356,7 +341,9 @@
 
 .strength-label {
    font-size: 0.75rem;
-   color: var(--clr-text-3);
+   font-family: var(--font-display);
+   color: var(--clr-text-2);
+   font-weight: 700;
 }
 
 /* ── Full-width button ── */
@@ -368,7 +355,33 @@
    border-radius: var(--radius);
 }
 
+/* HTML: <div class="btn-spinner"></div> */
 .btn-spinner {
+  width: 18px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid var(--clr-text);
+  animation:
+    l20-1 0.8s infinite linear alternate,
+    l20-2 1.6s infinite linear;
+}
+@keyframes l20-1{
+   0%    {clip-path: polygon(50% 50%,0       0,  50%   0%,  50%    0%, 50%    0%, 50%    0%, 50%    0% )}
+   12.5% {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100%   0%, 100%   0%, 100%   0% )}
+   25%   {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100% 100%, 100% 100%, 100% 100% )}
+   50%   {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100% 100%, 50%  100%, 0%   100% )}
+   62.5% {clip-path: polygon(50% 50%,100%    0, 100%   0%,  100%   0%, 100% 100%, 50%  100%, 0%   100% )}
+   75%   {clip-path: polygon(50% 50%,100% 100%, 100% 100%,  100% 100%, 100% 100%, 50%  100%, 0%   100% )}
+   100%  {clip-path: polygon(50% 50%,50%  100%,  50% 100%,   50% 100%,  50% 100%, 50%  100%, 0%   100% )}
+}
+@keyframes l20-2{ 
+  0%    {transform:scaleY(1)  rotate(0deg)}
+  49.99%{transform:scaleY(1)  rotate(135deg)}
+  50%   {transform:scaleY(-1) rotate(0deg)}
+  100%  {transform:scaleY(-1) rotate(-135deg)}
+}
+
+/* .btn-spinner {
    width: 16px;
    height: 16px;
    border: 2px solid rgba(255, 255, 255, 0.3);
@@ -376,7 +389,7 @@
    border-radius: 50%;
    animation: spin 0.7s linear infinite;
    flex-shrink: 0;
-}
+} */
 
 /* ── Divider ── */
 .auth-divider {
@@ -431,8 +444,7 @@
    margin: 0 auto 24px;
 }
 
-.otp-icon-wrap i {
-   font-size: 1.8rem;
+.otp-icon-wrap svg {
    color: var(--clr-accent-2);
 }
 
@@ -503,12 +515,16 @@
    font-size: 0.88rem;
    color: var(--clr-text-3);
    text-align: center;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   gap: 4px;
 }
 
 .otp-resend-btn {
    display: inline-flex;
    align-items: center;
-   gap: 6px;
+   gap: 4px;
    background: none;
    border: none;
    color: var(--clr-accent-2);
@@ -522,10 +538,6 @@
 
 .otp-resend-btn:hover {
    color: var(--clr-text);
-}
-
-.otp-resend-btn i {
-   font-size: 0.9rem;
 }
 
 .auth-back-link {
@@ -542,8 +554,10 @@
    color: var(--clr-text-2);
 }
 
-.auth-back-link i {
+.auth-back-link svg {
    font-size: 0.85rem;
+   width: 0.98rem;
+   height: 0.98rem;
 }
 
 /* ── Responsive ── */

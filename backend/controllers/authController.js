@@ -287,11 +287,19 @@ const refreshToken = async (req, res, next) => {
 
       // Verify refresh token
       const decoded = verifyRefreshToken(token);
+      const user = await userModel.findById(decoded.id);
 
       // Issue new access token
       const accessToken = signAccessToken({ id: decoded.id, role: decoded.role });
 
-      return sendSuccess(res, 'Token refreshed.', { accessToken });
+      return sendSuccess(res, 'Token refreshed.', {
+         accessToken,
+         user: {
+            id: user.id,
+            name: user.name,
+            role: user.role
+         }
+      });
 
    } catch (err) {
       // If refresh token is expired or invalid

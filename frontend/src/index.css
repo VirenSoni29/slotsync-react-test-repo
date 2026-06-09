@@ -1,1 +1,13 @@
-@import "tailwindcss"
+@import "tailwindcss";
+
+@utility classic-loader {
+   @apply w-fit font-bold font-mono whitespace-pre text-[30px] leading-[1.2em] h-[1.2em] overflow-hidden
+   before:whitespace-pre before:inline-block before:animate-[l39_1s_infinite_steps(11)_alternate]
+   before:content-["Loading...\A⌰oading...\A⌰⍜ading...\A⌰⍜⏃ding...\A⌰⍜⏃⎅ing...\A⌰⍜⏃⎅⟟ng...\A⌰⍜⏃⎅⟟⋏g...\A⌰⍜⏃⎅⟟⋏☌...\A⌰⍜⏃⎅⟟⋏☌⟒..\A⌰⍜⏃⎅⟟⋏☌⟒⏁.\A⌰⍜⏃⎅⟟⋏☌⟒⏁⋔"];
+}
+
+@keyframes l39 {
+   100% {
+      transform: translateY(-100%)
+   }
+}
