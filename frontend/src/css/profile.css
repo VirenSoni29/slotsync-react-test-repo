@@ -6,7 +6,7 @@
 /* ── Layout ── */
 .profile-main {
    min-height: calc(100vh - var(--nav-height));
-   padding: 48px 24px 80px;
+   padding: calc(var(--nav-height) + 10px) 24px 80px;
    max-width: 960px;
    margin: 0 auto;
 }
@@ -232,6 +232,10 @@
    color: var(--clr-green);
 }
 
+.status-not-verified {
+   color: var(--clr-red);
+}
+
 /* ── Quick links ── */
 .quick-links {
    margin-top: 20px;
@@ -317,10 +321,11 @@
    align-items: center;
 }
 
-.input-wrap>i:first-child {
+.input-wrap>.input-icon:first-child {
    position: absolute;
-   left: 12px;
-   font-size: 1rem;
+   left: 14px;
+   width: 1.05rem;
+   height: 1.05rem;
    color: var(--clr-text-3);
    pointer-events: none;
    transition: color 0.2s;
@@ -344,8 +349,8 @@
    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
 }
 
-.input-wrap input:focus+i,
-.input-wrap:focus-within>i:first-child {
+.input-wrap input:focus+.input-icon,
+.input-wrap:focus-within>.input-icon:first-child {
    color: var(--clr-accent-2);
 }
 
@@ -422,7 +427,7 @@
 }
 
 /* ── Spinner on submit buttons ── */
-.btn-loader i {
+.btn-loader .spin {
    display: inline-block;
    animation: spin 0.7s linear infinite;
 }

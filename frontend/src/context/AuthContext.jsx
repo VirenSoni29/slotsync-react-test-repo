@@ -106,6 +106,7 @@ const AuthProvider = ({ children }) => {
 
    const value = {
       user,
+      setUser,
       accessToken,
       loading,
       isAuthenticated: !!user,

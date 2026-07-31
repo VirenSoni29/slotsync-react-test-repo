@@ -264,7 +264,7 @@ const ServicesPreviewSection = () => {
    }, [placeholderServices]);
 
    return (
-      <section className="services-preview">
+      <section className="services-preview" id="services">
          <div className="section-inner">
             <div className="section-tag">Services</div>
             <h2 className="section-title">What can you book?</h2>
@@ -297,7 +297,7 @@ const ServicesPreviewSection = () => {
                              </div>
                           </div>
                           <Link
-                             to={`/book?service=${index + 1}`}
+                             to={`/services/book?service=${item.id}`}
                              className="service-book-btn"
                           >
                              Book{" "}
@@ -311,9 +311,9 @@ const ServicesPreviewSection = () => {
             </div>
 
             <div className="services-cta">
-               <a href="pages/services.html" className="btn-outline">
+               <Link to="/services" className="btn-outline">
                   View all services →
-               </a>
+               </Link>
             </div>
          </div>
       </section>

@@ -138,11 +138,6 @@
    flex-shrink: 0;
 }
 
-.selected-service-icon i {
-   font-size: 1.4rem;
-   color: var(--clr-accent-2);
-}
-
 .selected-service-info h3 {
    font-size: 1rem;
    color: var(--clr-text);
@@ -173,10 +168,6 @@
    border: 1px solid var(--clr-border);
 }
 
-.meta-chip i {
-   font-size: 0.8rem;
-}
-
 .price-chip {
    color: var(--clr-accent-2);
    font-family: var(--font-display);
@@ -188,7 +179,7 @@
 
 /* ── Notes textarea ── */
 .field-group label {
-   display: block;
+   display: flex;
    font-size: 0.83rem;
    font-weight: 600;
    color: var(--clr-text-2);
@@ -348,10 +339,6 @@
    display: flex;
    align-items: center;
    gap: 8px;
-}
-
-.summary-label i {
-   font-size: 0.85rem;
 }
 
 .summary-value {

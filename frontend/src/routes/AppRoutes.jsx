@@ -4,9 +4,12 @@ import AuthPage from "../pages/auth/AuthPage";
 import NotFound from "../pages/NotFound";
 import PublicRoute from "../components/PublicRoute";
 import ProtectedRoute from "../components/ProtectedRoute";
-import Profile from "../pages/Profile";
+import Profile from "../pages/user/Profile";
 import VerifyOtp from "../pages/auth/VerifyOtp";
 import ForgotPassword from "../pages/auth/ForgotPassword";
+import Services from "../pages/Services";
+import Book from "../pages/Book";
+import MyBookings from "../pages/MyBookings";
 
 const AppRoutes = () => {
    return (
@@ -19,8 +22,15 @@ const AppRoutes = () => {
             <Route path="/auth/:mode" element={<AuthPage />} />
          </Route>
 
+         <Route path="/services" element={<Services />} />
+
          <Route element={<ProtectedRoute />}>
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/user/profile" element={<Profile />} />
+         </Route>
+
+         <Route element={<ProtectedRoute allowedRoles={['customer']} />}>
+            <Route path="/services/book" element={<Book />} />
+            <Route path="/user/my-bookings" element={<MyBookings />} />
          </Route>
          
          <Route path="*" element={<NotFound />} />

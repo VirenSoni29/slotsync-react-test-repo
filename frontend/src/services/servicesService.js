@@ -6,6 +6,20 @@ const getAllServices = async () => {
    return response.data
 }
 
+const getServiceDetails = async (id) => {
+   const response = await api.get(`/services/${id}`)
+
+   return response.data
+}
+
+const getSlots = async (date) => {
+   const response = await api.get(`/slots?date=${date}`)
+
+   return response.data
+}
+
 export {
-   getAllServices
+   getAllServices,
+   getServiceDetails,
+   getSlots
 }

@@ -1,5 +1,41 @@
 @import "tailwindcss";
 
+:root {
+   /* Colors */
+   --clr-bg: #0a0a0f;
+   --clr-bg-2: #111118;
+   --clr-bg-3: #1a1a24;
+   --clr-surface: #16161f;
+   --clr-border: rgba(255, 255, 255, 0.08);
+   --clr-border-2: rgba(255, 255, 255, 0.14);
+
+   --clr-accent: #6c63ff;
+   --clr-accent-2: #a78bfa;
+   --clr-accent-glow: rgba(108, 99, 255, 0.35);
+   --clr-green: #22d3a5;
+   --clr-red: #f87171;
+   --clr-yellow: #fbbf24;
+
+   --clr-text: #f0f0f8;
+   --clr-text-2: #a0a0b8;
+   --clr-text-3: #606078;
+
+   /* Typography */
+   --font-display: 'Syne', sans-serif;
+   --font-body: 'DM Sans', sans-serif;
+
+   /* Spacing */
+   --nav-height: 68px;
+   --section-pad: 100px;
+   --max-w: 1200px;
+   --radius: 12px;
+   --radius-lg: 20px;
+
+   /* Transitions */
+   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+   --transition: 0.25s var(--ease);
+}
+
 @utility classic-loader {
    @apply w-fit font-bold font-mono whitespace-pre text-[30px] leading-[1.2em] h-[1.2em] overflow-hidden
    before:whitespace-pre before:inline-block before:animate-[l39_1s_infinite_steps(11)_alternate]
@@ -10,4 +46,12 @@
    100% {
       transform: translateY(-100%)
    }
+}
+
+@utility navlinks-a {
+   @apply text-[.9rem] font-medium text-(--clr-text-2) transition-[color_var(--transition)] hover:text-(--clr-text)
+}
+
+.navlinks-a.active {
+   color: var(--clr-accent-2);
 }

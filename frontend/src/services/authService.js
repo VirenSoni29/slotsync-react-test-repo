@@ -63,6 +63,24 @@ const resetPassword = async (data) => {
    return response.data
 }
 
+const getProfile = async () => {
+   const response = await api.get('/auth/profile')
+
+   return response.data
+}
+
+const updateProfile = async (data) => {
+   const response = await api.put("/auth/update-profile", data)
+
+   return response.data
+}
+
+const changePassword = async (data) => {
+   const response = await api.put("/auth/change-password", data)
+
+   return response.data
+}
+
 export {
    loginUser,
    registerUser,
@@ -71,5 +89,8 @@ export {
    verifyOtp,
    sendOtp,
    forgotPassword,
-   resetPassword
+   resetPassword,
+   getProfile,
+   updateProfile,
+   changePassword
 }

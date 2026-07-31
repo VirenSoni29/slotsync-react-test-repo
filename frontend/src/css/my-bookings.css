@@ -254,8 +254,9 @@
    color: var(--clr-text-2);
 }
 
-.booking-meta-item i {
-   font-size: 0.85rem;
+.booking-meta-item .i {
+   width: 0.85rem;
+   height: 0.85rem;
    color: var(--clr-text-3);
 }
 

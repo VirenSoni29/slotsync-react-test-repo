@@ -3,7 +3,7 @@
    ============================================================ */
 
 /* ── Active nav link ── */
-.nav-links a.active {
+.nav-links .active {
    color: var(--clr-accent-2);
 }
 
@@ -59,14 +59,6 @@
    position: relative;
    display: flex;
    align-items: center;
-}
-
-.search-wrap i {
-   position: absolute;
-   left: 14px;
-   font-size: 1rem;
-   color: var(--clr-text-3);
-   pointer-events: none;
 }
 
 .search-wrap input {

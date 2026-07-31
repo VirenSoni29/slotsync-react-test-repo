@@ -82,10 +82,16 @@ router.post('/logout',
    authController.logout
 );
 
-// PUT /api/auth/profile
-router.put('/profile',
+// PUT /api/auth/update-profile
+router.put('/update-profile',
    authMiddleware,
    authController.updateProfile
+);
+
+// GET /api/auth/profile
+router.get('/profile',
+   authMiddleware,
+   authController.getProfile
 );
 
 // PUT /api/auth/change-password

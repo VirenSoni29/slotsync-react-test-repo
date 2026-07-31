@@ -342,6 +342,21 @@ const changePassword = async (req, res, next) => {
    }
 };
 
+// GET /api/auth/profile
+const getProfile = async (req, res, next) => {
+   try {
+      const user = await userModel.findById(req.user.id)
+
+      if (!user) {
+         return sendError(res, 'User not found!', 404)
+      }
+
+      return sendSuccess(res, 'User data fetched!', { user })
+   } catch (err) {
+      next(err)
+   }
+}
+
 // ============================================================
 //  POST /api/auth/logout
 //  Clears the refresh token cookie
@@ -362,5 +377,6 @@ export {
    refreshToken,
    updateProfile,
    changePassword,
+   getProfile,
    logout
 };
