@@ -1,9 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 import cookieParser from 'cookie-parser';
 

@@ -3,9 +3,7 @@
 //  EMAIL_PASS = your_gmail_app_password
 
 import nodemailer from 'nodemailer';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import config from '../config/config.js'
 
 // ── Create reusable transporter ──
 // Created once, reused for every email sent
@@ -14,8 +12,8 @@ const transporter = nodemailer.createTransport({
    port: 587,
    secure: false,
    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
+      user: config.EMAIL_USER,
+      pass: config.EMAIL_PASS
    }
 });
 
@@ -32,7 +30,7 @@ transporter.verify((err) => {
 // All specific email functions below call this
 const sendMail = async ({ to, subject, html }) => {
    await transporter.sendMail({
-      from: `"SlotSync" <${process.env.EMAIL_USER}>`,
+      from: `"SlotSync" <${config.EMAIL_USER}>`,
       to,
       subject,
       html
@@ -165,7 +163,7 @@ const sendWelcomeEmail = async (email, name) => {
                     Your account has been verified. You can now browse services
                     and book appointments in seconds — no calls, no back-and-forth.
                 </p>
-                <a href="${process.env.FRONTEND_URL}/pages/services.html"
+                <a href="${config.FRONTEND_URL}/pages/services.html"
                    style="display: inline-block; background: #6c63ff; color: #fff; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; margin-bottom: 24px;">
                     Browse Services
                 </a>

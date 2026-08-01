@@ -1,8 +1,15 @@
+// ============================================================
+//  models/otpModel.js
+//  All SQL queries for the otps table (PostgreSQL)
+// ============================================================
+
 import db from '../config/db.js';
+import crypto from 'crypto';
 
 // ── Generate a random 6-digit OTP ──
 const generateOtp = () => {
-   return String(Math.floor(Math.random() * 900000) + 100000);
+   const num = crypto.randomInt(0, 999999)
+  return num.toString().padStart(6, '0');
 };
 
 // ── Store OTP in database ──
@@ -11,7 +18,7 @@ const generateOtp = () => {
 const generateAndStoreOtp = async (email, purpose) => {
    // Delete old OTPs for this email + purpose
    await db.query(
-      'DELETE FROM otps WHERE email = ? AND purpose = ?',
+      'DELETE FROM otps WHERE email = $1 AND purpose = $2::otp_purpose',
       [email, purpose]
    );
 
@@ -21,7 +28,7 @@ const generateAndStoreOtp = async (email, purpose) => {
 
    await db.query(
       `INSERT INTO otps (email, otp_code, purpose, expires_at, is_used)
-         VALUES (?, ?, ?, ?, FALSE)`,
+       VALUES ($1, $2, $3::otp_purpose, $4, FALSE)`,
       [email, otp, purpose, expiresAt]
    );
 
@@ -32,15 +39,13 @@ const generateAndStoreOtp = async (email, purpose) => {
 // Returns the OTP record if valid
 // Returns null if not found, expired, or already used
 const verifyOtp = async (email, otpCode, purpose) => {
-   const [rows] = await db.query(
+   const { rows } = await db.query(
       `SELECT * FROM otps
-         WHERE email = ?
-           AND otp_code = ?
-           AND purpose = ?
-           AND is_used = FALSE
-           AND expires_at > NOW()`,
-      //  ↑ NOW() is MySQL current time
-      //  expires_at > NOW() means it hasn't expired yet
+       WHERE email = $1
+         AND otp_code = $2
+         AND purpose = $3::otp_purpose
+         AND is_used = FALSE
+         AND expires_at > CURRENT_TIMESTAMP`,
       [email, otpCode, purpose]
    );
 
@@ -52,7 +57,7 @@ const verifyOtp = async (email, otpCode, purpose) => {
 // Prevents the same OTP from being used twice (replay attack)
 const markOtpUsed = async (id) => {
    await db.query(
-      'UPDATE otps SET is_used = TRUE WHERE id = ?',
+      'UPDATE otps SET is_used = TRUE WHERE id = $1',
       [id]
    );
 };
@@ -61,7 +66,7 @@ const markOtpUsed = async (id) => {
 // Called after password reset is complete — cleanup
 const deleteOtps = async (email, purpose) => {
    await db.query(
-      'DELETE FROM otps WHERE email = ? AND purpose = ?',
+      'DELETE FROM otps WHERE email = $1 AND purpose = $2::otp_purpose',
       [email, purpose]
    );
 };

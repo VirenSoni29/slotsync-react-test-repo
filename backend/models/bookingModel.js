@@ -1,20 +1,26 @@
+// ============================================================
+//  models/bookingModel.js
+//  All SQL queries for the bookings table (PostgreSQL)
+// ============================================================
+
 import db from '../config/db.js';
 
 // ── Create a booking ──
-// Called inside a transaction — receives connection, not db
+// Called inside a transaction — receives connection client, not db pool
 const createBooking = async (connection, { user_id, service_id, slot_id, notes }) => {
-   const [result] = await connection.query(
+   const { rows } = await connection.query(
       `INSERT INTO bookings (user_id, service_id, slot_id, status, payment_status, notes)
-       VALUES (?, ?, ?, 'pending', 'pending', ?)`,
+       VALUES ($1, $2, $3, 'pending'::booking_status, 'pending'::payment_status, $4)
+       RETURNING id`,
       [user_id, service_id, slot_id, notes || null]
    );
-   return result.insertId;
+   return rows[0].id;
 };
 
 // ── Get booking by ID ──
 // Joins users, services, slots for full details
 const getBookingById = async (id) => {
-   const [rows] = await db.query(
+   const { rows } = await db.query(
       `SELECT
          b.id,
          b.status,
@@ -23,6 +29,7 @@ const getBookingById = async (id) => {
          b.reminder_day_before_sent,
          b.reminder_same_day_sent,
          b.created_at,
+         b.updated_at,
          u.id         AS user_id,
          u.name       AS user_name,
          u.email      AS user_email,
@@ -39,7 +46,7 @@ const getBookingById = async (id) => {
        JOIN users    u  ON b.user_id    = u.id
        JOIN services s  ON b.service_id = s.id
        JOIN slots    sl ON b.slot_id    = sl.id
-       WHERE b.id = ?`,
+       WHERE b.id = $1`,
       [id]
    );
    return rows[0] || null;
@@ -47,7 +54,7 @@ const getBookingById = async (id) => {
 
 // ── Get all bookings for a customer ──
 const getBookingsByUser = async (userId) => {
-   const [rows] = await db.query(
+   const { rows } = await db.query(
       `SELECT
          b.id,
          b.status,
@@ -62,7 +69,7 @@ const getBookingsByUser = async (userId) => {
        FROM bookings b  
        JOIN services s  ON b.service_id = s.id
        JOIN slots    sl ON b.slot_id    = sl.id
-       WHERE b.user_id = ?
+       WHERE b.user_id = $1
        ORDER BY sl.date DESC, sl.start_time DESC`,
       [userId]
    );
@@ -71,7 +78,7 @@ const getBookingsByUser = async (userId) => {
 
 // ── Get all bookings — admin ──
 const getAllBookings = async () => {
-   const [rows] = await db.query(
+   const { rows } = await db.query(
       `SELECT
          b.id,
          b.status,
@@ -97,7 +104,7 @@ const getAllBookings = async () => {
 // Used for: confirm, cancel, complete
 const updateBookingStatus = async (id, status) => {
    await db.query(
-      'UPDATE bookings SET status = ? WHERE id = ?',
+      'UPDATE bookings SET status = $1::booking_status WHERE id = $2',
       [status, id]
    );
 };
@@ -105,29 +112,29 @@ const updateBookingStatus = async (id, status) => {
 // ── Update payment status ──
 const updatePaymentStatus = async (id, paymentStatus) => {
    await db.query(
-      'UPDATE bookings SET payment_status = ? WHERE id = ?',
+      'UPDATE bookings SET payment_status = $1::payment_status WHERE id = $2',
       [paymentStatus, id]
    );
 };
 
 // ── Mark reminder sent ──
 // Called by cron job after sending reminder email
-const markReminderSent = async (id) => {
+const markReminderSent = async (id, type = 'same_day') => {
+   const column = type === 'day_before' ? 'reminder_day_before_sent' : 'reminder_same_day_sent';
    await db.query(
-      'UPDATE bookings SET reminder_sent = TRUE WHERE id = ?',
+      `UPDATE bookings SET ${column} = TRUE WHERE id = $1`,
       [id]
    );
 };
 
 // ── Get upcoming bookings that need reminders ──
 // Called by cron job every hour
-// Finds confirmed bookings starting in next 60 min
-// that haven't had a reminder sent yet
+// Finds confirmed bookings starting in next 60 min that haven't had a reminder sent
 const getBookingsForReminder = async () => {
-   const [rows] = await db.query(
+   const { rows } = await db.query(
       `SELECT
          b.id,
-         b.reminder_sent,
+         b.reminder_same_day_sent,
          u.name       AS user_name,
          u.email      AS user_email,
          s.service_name,
@@ -137,9 +144,9 @@ const getBookingsForReminder = async () => {
        JOIN users    u  ON b.user_id    = u.id
        JOIN services s  ON b.service_id = s.id
        JOIN slots    sl ON b.slot_id    = sl.id
-       WHERE b.status         = 'confirmed'
-         AND b.reminder_sent  = FALSE
-         AND CONCAT(sl.date, ' ', sl.start_time) BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 1 HOUR)`
+       WHERE b.status                 = 'confirmed'::booking_status
+         AND b.reminder_same_day_sent = FALSE
+         AND (sl.date + sl.start_time) BETWEEN NOW() AND NOW() + INTERVAL '1 hour'`
    );
    return rows;
 };

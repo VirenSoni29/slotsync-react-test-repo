@@ -1,29 +1,27 @@
-import mysql from 'mysql2';
-import dotenv from 'dotenv';
+import { Pool } from 'pg';
+import config from './config.js';
 
-dotenv.config();
-
-const pool = mysql.createPool({
-   host: process.env.DB_HOST,
-   user: process.env.DB_USER,
-   password: process.env.DB_PASSWORD,
-   database: process.env.DB_NAME,
-   port: process.env.DB_PORT || 3306,
-   waitForConnections: true,
-   connectionLimit: 10,
-   queueLimit: 0
+const pool = new Pool({
+   connectionString: config.DATABASE_URL,
+   ssl: config.NODE_ENV === 'production'
+      ? { rejectUnauthorized: true }
+      : { rejectUnauthorized: false }, // Enables SSL for Neon connection
 });
 
-const db = pool.promise();
-
-// Test the connection when server starts
-pool.getConnection((err, connection) => {
-   if (err) {
-      console.error('❌ Database connection failed:', err.message);
-      return;
-   }
-   console.log('✅ MySQL connected successfully');
-   connection.release(); // return connection back to pool
+pool.on('connect', () => {
+   console.log('Connected to Neon PostgreSQL database');
 });
+
+pool.on('error', (err) => {
+   console.error('Unexpected error on idle PostgreSQL client', err);
+});
+
+export const query = (text, params) => pool.query(text, params);
+export const getClient = () => pool.connect();
+
+const db = {
+   query,
+   getClient,
+};
 
 export default db;

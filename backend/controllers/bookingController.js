@@ -12,9 +12,8 @@ import { sendSuccess, sendError } from '../utils/apiResponse.js';
 //  The FOR UPDATE transaction lives here
 // ============================================================
 const createBooking = async (req, res, next) => {
-   // Get a single connection from the pool
-   // ALL queries in this transaction must use this same connection
-   const connection = await db.getConnection();
+   // Acquire a dedicated client connection for the transaction
+   const client = await db.getClient();
 
    try {
       const { service_id, slot_id, notes } = req.body;
@@ -23,52 +22,46 @@ const createBooking = async (req, res, next) => {
       // ── Validate service exists ──
       const service = await serviceModel.getServiceById(service_id);
       if (!service) {
-         connection.release();
          return sendError(res, 'Service not found.', 404);
       }
 
       // ── BEGIN TRANSACTION ──
-      await connection.beginTransaction();
+      await client.query('BEGIN');
 
       // ── FOR UPDATE — lock this slot row ──
-      // No other request can read or modify this row
-      // until we COMMIT or ROLLBACK
-      const [rows] = await connection.query(
-         'SELECT * FROM slots WHERE id = ? FOR UPDATE',
+      // Row level lock prevents race conditions on capacity
+      const { rows } = await client.query(
+         'SELECT * FROM slots WHERE id = $1 FOR UPDATE',
          [slot_id]
       );
 
       const slot = rows[0];
 
       if (!slot) {
-         await connection.rollback();
-         connection.release();
+         await client.query('ROLLBACK');
          return sendError(res, 'Slot not found.', 404);
       }
 
       if (slot.status === 'blocked') {
-         await connection.rollback();
-         connection.release();
+         await client.query('ROLLBACK');
          return sendError(res, 'This slot is blocked and cannot be booked.', 400);
       }
 
       // ── Check capacity ──
       if (slot.booked_count >= slot.max_capacity) {
-         await connection.rollback();
-         connection.release();
+         await client.query('ROLLBACK');
          return sendError(res, 'This slot is fully booked.', 400);
       }
 
       // ── Check date is not in the past ──
       const today = new Date().toISOString().split('T')[0];
       if (slot.date < today) {
-         await connection.rollback();
-         connection.release();
+         await client.query('ROLLBACK');
          return sendError(res, 'Cannot book a slot in the past.', 400);
       }
 
       // ── Create the booking ──
-      const bookingId = await bookingModel.createBooking(connection, {
+      const bookingId = await bookingModel.createBooking(client, {
          user_id,
          service_id,
          slot_id,
@@ -76,11 +69,10 @@ const createBooking = async (req, res, next) => {
       });
 
       // ── Increment slot's booked count ──
-      await slotModel.incrementBookedCount(slot_id, connection);
+      await slotModel.incrementBookedCount(slot_id, client);
 
       // ── COMMIT — all changes saved ──
-      await connection.commit();
-      connection.release();
+      await client.query('COMMIT');
 
       // ── Fetch full booking details to return ──
       const booking = await bookingModel.getBookingById(bookingId);
@@ -94,9 +86,11 @@ const createBooking = async (req, res, next) => {
 
    } catch (err) {
       // Something went wrong — undo ALL changes
-      await connection.rollback();
-      connection.release();
+      await client.query('ROLLBACK');
       next(err);
+   } finally {
+      // ALWAYS release connection back to pool
+      client.release();
    }
 };
 
@@ -200,79 +194,76 @@ const cancelBooking = async (req, res, next) => {
 //  Customer reschedules to a new slot
 // ============================================================
 const rescheduleBooking = async (req, res, next) => {
-   const connection = await db.getConnection();
+   const client = await db.getClient();
 
    try {
       const { new_slot_id } = req.body;
       const booking = await bookingModel.getBookingById(req.params.id);
 
       if (!booking) {
-         connection.release();
          return sendError(res, 'Booking not found.', 404);
       }
 
       // Only customer's own confirmed booking
       if (req.user.role === 'customer' && booking.user_id !== req.user.id) {
-         connection.release();
          return sendError(res, 'Access denied.', 403);
       }
 
       if (booking.status !== 'confirmed') {
-         connection.release();
          return sendError(res, 'Only confirmed bookings can be rescheduled.', 400);
       }
 
       // ── BEGIN TRANSACTION ──
-      await connection.beginTransaction();
+      await client.query('BEGIN');
 
       // Lock new slot
-      const [rows] = await connection.query(
-         'SELECT * FROM slots WHERE id = ? FOR UPDATE',
+      const { rows } = await client.query(
+         'SELECT * FROM slots WHERE id = $1 FOR UPDATE',
          [new_slot_id]
       );
       const newSlot = rows[0];
 
       if (!newSlot) {
-         await connection.rollback();
-         connection.release();
+         await client.query('ROLLBACK');
          return sendError(res, 'New slot not found.', 404);
       }
 
       if (newSlot.booked_count >= newSlot.max_capacity) {
-         await connection.rollback();
-         connection.release();
+         await client.query('ROLLBACK');
          return sendError(res, 'New slot is fully booked.', 400);
       }
 
       if (newSlot.status === 'blocked') {
-         await connection.rollback();
-         connection.release();
+         await client.query('ROLLBACK');
          return sendError(res, 'New slot is blocked.', 400);
       }
 
       // Free old slot
       await slotModel.decrementBookedCount(booking.slot_id);
 
-      // Update booking with new slot
-      await connection.query(
-         'UPDATE bookings SET slot_id = ?, reminder_sent = FALSE WHERE id = ?',
+      // Update booking with new slot & reset reminders for new time
+      await client.query(
+         `UPDATE bookings 
+          SET slot_id = $1, 
+              reminder_day_before_sent = FALSE, 
+              reminder_same_day_sent = FALSE 
+          WHERE id = $2`,
          [new_slot_id, booking.id]
-         // reset reminder_sent so reminder goes out for new time
       );
 
       // Increment new slot count
-      await slotModel.incrementBookedCount(new_slot_id, connection);
+      await slotModel.incrementBookedCount(new_slot_id, client);
 
-      await connection.commit();
-      connection.release();
+      await client.query('COMMIT');
 
       const updated = await bookingModel.getBookingById(booking.id);
       return sendSuccess(res, 'Booking rescheduled successfully.', updated);
 
    } catch (err) {
-      await connection.rollback();
-      connection.release();
+      await client.query('ROLLBACK');
       next(err);
+   } finally {
+      client.release();
    }
 };
 

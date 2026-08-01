@@ -1,11 +1,9 @@
 import app from './app.js';
-import dotenv from 'dotenv';
+import config from './config/config.js'
 import './config/db.js';
 import { startReminderJob } from './services/reminderService.js';
 
-dotenv.config();
-
-const PORT = process.env.PORT || 5000;
+const PORT = config.PORT || 5000;
 
 app.listen(PORT, () => {
    console.log(`🚀 Server running on http://localhost:${PORT}`);
