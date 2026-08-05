@@ -2,7 +2,7 @@ import axios from 'axios';
 import { clearAccessToken, getAccessToken, setAccessToken } from './tokenService.js';
 
 const api = axios.create({
-   baseURL: 'http://localhost:5000/api',
+   baseURL: import.meta.env.VITE_BACKEND_API_URL,
    withCredentials: true,
    headers: {
       'Content-Type': 'application/json'
