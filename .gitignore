@@ -3,3 +3,5 @@ tryingGemini/
 **/node_modules/
 
 **/*.env
+walkthrough.md
+database/

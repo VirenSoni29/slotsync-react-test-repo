@@ -1,5 +1,4 @@
 import { Router } from 'express';
-
 import * as paymentController from '../controllers/paymentController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import { isCustomer } from '../middleware/roleMiddleware.js';

@@ -8,23 +8,24 @@
 /* ── CSS Variables ── */
 :root {
    /* Colors */
-   --clr-bg: #0a0a0f;
-   --clr-bg-2: #111118;
-   --clr-bg-3: #1a1a24;
-   --clr-surface: #16161f;
-   --clr-border: rgba(255, 255, 255, 0.08);
-   --clr-border-2: rgba(255, 255, 255, 0.14);
+   --clr-bg: hsl(240, 20%, 5%);
+   --clr-bg-2: hsl(240, 17%, 8%);
+   --clr-bg-3: hsl(240, 16%, 12%);
+   --clr-surface: hsl(240, 17%, 10%);
+   --clr-border: hsla(0, 0%, 100%, 0.08);
+   --clr-border-2: hsla(0, 0%, 100%, 0.14);
+   --clr-nav-bg: hsla(240, 20%, 5%, 0.85);
 
-   --clr-accent: #6c63ff;
-   --clr-accent-2: #a78bfa;
-   --clr-accent-glow: rgba(108, 99, 255, 0.35);
-   --clr-green: #22d3a5;
-   --clr-red: #f87171;
-   --clr-yellow: #fbbf24;
+   --clr-accent: hsl(243, 100%, 69%);
+   --clr-accent-2: hsl(255, 92%, 76%);
+   --clr-accent-glow: hsla(243, 100%, 69%, 0.35);
+   --clr-green: hsl(164, 72%, 48%);
+   --clr-red: hsl(0, 91%, 71%);
+   --clr-yellow: hsl(43, 96%, 56%);
 
-   --clr-text: #f0f0f8;
-   --clr-text-2: #a0a0b8;
-   --clr-text-3: #606078;
+   --clr-text: hsl(240, 36%, 96%);
+   --clr-text-2: hsl(240, 14%, 67%);
+   --clr-text-3: hsl(240, 11%, 42%);
 
    /* Typography */
    --font-display: 'Syne', sans-serif;
@@ -40,6 +41,29 @@
    /* Transitions */
    --ease: cubic-bezier(0.16, 1, 0.3, 1);
    --transition: 0.25s var(--ease);
+}
+
+/* ── Light Theme ── */
+[data-theme="light"],
+.light-theme {
+   --clr-bg: hsl(240, 20%, 98%);
+   --clr-bg-2: hsl(240, 20%, 94%);
+   --clr-bg-3: hsl(240, 20%, 89%);
+   --clr-surface: hsl(0, 0%, 100%);
+   --clr-border: hsla(240, 20%, 10%, 0.08);
+   --clr-border-2: hsla(240, 20%, 10%, 0.15);
+   --clr-nav-bg: hsla(240, 20%, 98%, 0.85);
+
+   --clr-accent: hsl(243, 85%, 60%);
+   --clr-accent-2: hsl(243, 75%, 52%);
+   --clr-accent-glow: hsla(243, 85%, 60%, 0.2);
+   --clr-green: hsl(164, 80%, 36%);
+   --clr-red: hsl(0, 75%, 54%);
+   --clr-yellow: hsl(38, 92%, 44%);
+
+   --clr-text: hsl(240, 25%, 12%);
+   --clr-text-2: hsl(240, 12%, 38%);
+   --clr-text-3: hsl(240, 10%, 58%);
 }
 
 /* ── Reset ── */
@@ -175,58 +199,6 @@ h4 {
    padding: 13px 24px;
 }
 
-.user-icon {
-   position: relative;
-}
-
-.user-icon-hover-box {
-   font-weight: normal;
-   color: var(--clr-text);
-   position: absolute;
-   display: none;
-   top: 0;
-   right: 0;
-   z-index: 10;
-   padding-top: 3rem;
-}
-
-.user-icon:hover .user-icon-hover-box {
-   display: block;
-}
-
-.user-icon-hover-box ul {
-   border-radius: 8px;
-   list-style: none;
-   margin: 0;
-   padding: .5rem;
-   background-color: var(--clr-bg);
-   font-size: .92rem;
-   animation: fadeIn 0.4s var(--ease);
-}
-
-@keyframes fadeIn {
-   from {
-      opacity: 0;
-      transform: translateY(-5px);
-   }
-   to {
-      opacity: 1;
-      transform: translateY(0);
-   }
-}
-
-.user-icon-hover-box ul li {
-   padding: .25rem .5rem;
-   display: flex;
-   align-items: center;
-   gap: 3px;
-   cursor: pointer;
-}
-
-.user-icon-hover-box ul li:hover {
-   background-color: var(--clr-bg-light);
-}
-
 /* ── Section Shared ── */
 .section-inner {
    max-width: var(--max-w);
@@ -274,7 +246,7 @@ h4 {
 }
 
 .navbar.scrolled {
-   background: rgba(10, 10, 15, 0.85);
+   background: var(--clr-nav-bg);
    backdrop-filter: blur(16px);
    -webkit-backdrop-filter: blur(16px);
    border-bottom: 1px solid var(--clr-border);
@@ -430,83 +402,6 @@ h4 {
    border-top: 1px solid var(--clr-border);
    color: var(--clr-text-3);
    font-size: 0.82rem;
-}
-
-/* ── Toast Notification ── */
-.toast-container {
-   position: fixed;
-   bottom: 24px;
-   right: 24px;
-   z-index: 999;
-   display: flex;
-   flex-direction: column;
-   gap: 10px;
-}
-
-.toast {
-   display: flex;
-   align-items: center;
-   gap: 10px;
-   padding: 12px 18px;
-   border-radius: var(--radius);
-   background: var(--clr-surface);
-   border: 1px solid var(--clr-border);
-   color: var(--clr-text);
-   font-size: 0.9rem;
-   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-   animation: toastIn 0.3s var(--ease) forwards;
-   min-width: 260px;
-}
-
-.toast.success {
-   border-left: 3px solid var(--clr-green);
-}
-
-.toast.error {
-   border-left: 3px solid var(--clr-red);
-}
-
-.toast.info {
-   border-left: 3px solid var(--clr-accent);
-}
-
-@keyframes toastIn {
-   from {
-      opacity: 0;
-      transform: translateX(20px);
-   }
-
-   to {
-      opacity: 1;
-      transform: translateX(0);
-   }
-}
-
-/* ── Loader Overlay ── */
-.loader-overlay {
-   position: fixed;
-   inset: 0;
-   background: rgba(10, 10, 15, 0.7);
-   backdrop-filter: blur(4px);
-   z-index: 200;
-   display: flex;
-   align-items: center;
-   justify-content: center;
-}
-
-.loader-spinner {
-   width: 40px;
-   height: 40px;
-   border: 3px solid var(--clr-border);
-   border-top-color: var(--clr-accent);
-   border-radius: 50%;
-   animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-   to {
-      transform: rotate(360deg);
-   }
 }
 
 /* ── Responsive ── */

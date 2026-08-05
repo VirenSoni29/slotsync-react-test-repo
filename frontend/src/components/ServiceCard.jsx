@@ -20,6 +20,11 @@ const ServiceCard = ({ service, index }) => {
             </div>
             <div className="card-info">
                <h3>{service.service_name}</h3>
+               {service.business_name && (
+                  <span className="text-[0.78rem] text-(--clr-accent-2) font-semibold flex items-center gap-1 mt-0.5 mb-1">
+                     🏢 {service.business_name}
+                  </span>
+               )}
                <p>
                   {service.description ||
                      "Professional service available for booking."}

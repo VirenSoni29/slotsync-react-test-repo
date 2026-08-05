@@ -4,6 +4,7 @@ import * as otpService from '../services/otpService.js';
 import * as mailService from '../services/mailService.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/generateToken.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
+import config from '../config/config.js';
 
 // ============================================================
 //  POST /api/auth/register
@@ -195,8 +196,8 @@ const login = async (req, res, next) => {
       // httpOnly = JS cannot read it → safer against XSS attacks
       res.cookie('refreshToken', refreshToken, {
          httpOnly: true,
-         secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
-         sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+         secure: config.NODE_ENV === 'production', // HTTPS only in prod
+         sameSite: config.NODE_ENV === 'production' ? 'strict' : 'lax',
          maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
       });
 

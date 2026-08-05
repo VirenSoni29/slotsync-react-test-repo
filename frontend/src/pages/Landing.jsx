@@ -50,8 +50,8 @@ const HeroSection = () => {
                   you're done.
                </p>
                <div className="hero-cta">
-                  <a
-                     href="pages/services.html"
+                  <Link
+                     to="/services"
                      className="btn-primary btn-large"
                   >
                      Browse Services
@@ -65,7 +65,7 @@ const HeroSection = () => {
                      >
                         <path d="M5 12h14M12 5l7 7-7 7" />
                      </svg>
-                  </a>
+                  </Link>
                   <a href="#how-it-works" className="btn-outline btn-large">
                      See how it works
                   </a>
@@ -278,11 +278,16 @@ const ServicesPreviewSection = () => {
                   : services.map((item, index) => (
                        <div className="service-card" key={index}>
                           <div className="service-icon-wrap">
-                             <HugeiconsIcon icon={item.icon || getServiceIcon(item.name)} strokeWidth={2} />
+                             <HugeiconsIcon icon={item.icon || getServiceIcon(item.service_name)} strokeWidth={2} />
                           </div>
                           <div className="service-info">
-                             <h3>{item.name}</h3>
-                             <p>{item.desc}</p>
+                             <h3>{item.service_name}</h3>
+                             {item.business_name && (
+                                <span className="text-[0.78rem] text-(--clr-accent-2) font-semibold flex items-center gap-1 mt-0.5 mb-1">
+                                   🏢 {item.business_name}
+                                </span>
+                             )}
+                             <p>{item.description}</p>
                              <div className="service-meta">
                                 <span className="service-price">
                                    {item.price}
@@ -292,7 +297,7 @@ const ServicesPreviewSection = () => {
                                       icon={Clock01Icon}
                                       strokeWidth={2}
                                    />{" "}
-                                   {item.duration} min
+                                   {item.duration_minutes} min
                                 </span>
                              </div>
                           </div>
@@ -320,7 +325,7 @@ const ServicesPreviewSection = () => {
    );
 };
 
-const FeaturesAndCTABanner = ({ openModal }) => {
+const FeaturesAndCTABanner = () => {
    const features = [
       {
          icon: TimeScheduleIcon,
@@ -337,15 +342,15 @@ const FeaturesAndCTABanner = ({ openModal }) => {
          heading: "Auto notifications",
          desc: "Confirmation emails, reminders 1 hour before, and cancellation alerts — all automatic.",
       },
-      {
-         icon: Queue01Icon,
-         heading: "Waitlist system",
-         desc: "Slot full? Join the waitlist. If someone cancels, you get notified instantly.",
-      },
+      // {
+      //    icon: Queue01Icon,
+      //    heading: "Waitlist system",
+      //    desc: "Slot full? Join the waitlist. If someone cancels, you get notified instantly.",
+      // },
       {
          icon: ChartBarLineIcon,
-         heading: "Admin analytics",
-         desc: "Revenue, peak hours, popular services — all in one dashboard for business owners.",
+         heading: "Business & Admin Control",
+         desc: "Track total revenue, generate custom time slots, audit platform payment ledgers, and manage user roles.",
       },
       {
          icon: ShieldUserIcon,
@@ -383,9 +388,9 @@ const FeaturesAndCTABanner = ({ openModal }) => {
                <h2>Ready to stop managing appointments manually?</h2>
                <p>Join SlotSync and let your customers book themselves.</p>
                <div className="cta-buttons">
-                  <button className="btn-primary btn-large" onClick={openModal}>
+                  <Link to="/auth/register" className="btn-primary btn-large">
                      Create your account
-                  </button>
+                  </Link>
                   <Link to="/auth/login" className="btn-ghost btn-large">
                      Already have one? Log in
                   </Link>
@@ -396,110 +401,16 @@ const FeaturesAndCTABanner = ({ openModal }) => {
    );
 };
 
-const GetStartedModal = ({ isOpen, closeModal }) => {
-   useEffect(() => {
-      const handleKeyDown = (e) => {
-         if (e.key === "Escape") {
-            closeModal();
-         }
-      };
-
-      document.addEventListener("keydown", handleKeyDown);
-
-      return () => {
-         document.removeEventListener("keydown", handleKeyDown);
-      };
-   }, [closeModal]);
-
-   if (!isOpen) return null;
-
-   return (
-      <div
-         className="modal-overlay gs-modal-overlay hidden"
-         id="gsModal"
-         onClick={closeModal}
-         aria-modal="true"
-         role="dialog"
-      >
-         <div className="gs-modal-card">
-            <button
-               className="gs-modal-close"
-               id="gsModalClose"
-               onClick={closeModal}
-               aria-label="Close"
-            >
-               &times;
-            </button>
-            <div className="gs-modal-header">
-               <h2>Get started with SlotSync</h2>
-               <p>Choose how you want to use the platform.</p>
-            </div>
-            <div className="gs-modal-choices">
-               <Link to="/auth/register" className="gs-choice-card">
-                  <div className="gs-choice-icon">🙋</div>
-                  <div className="gs-choice-body">
-                     <h3>I'm a Customer</h3>
-                     <p>Book appointments with businesses near you.</p>
-                  </div>
-                  <svg
-                     className="gs-choice-arrow"
-                     width="18"
-                     height="18"
-                     viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     strokeWidth="2.5"
-                  >
-                     <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-               </Link>
-               <Link to="/auth/business-register" className="gs-choice-card">
-                  <div className="gs-choice-icon">🏢</div>
-                  <div className="gs-choice-body">
-                     <h3>I'm a Business</h3>
-                     <p>Set up your profile and start accepting bookings.</p>
-                  </div>
-                  <svg
-                     className="gs-choice-arrow"
-                     width="18"
-                     height="18"
-                     viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     strokeWidth="2.5"
-                  >
-                     <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-               </Link>
-            </div>
-            <p className="gs-modal-login">
-               Already have an account? <Link to="/auth/login">Log in</Link>
-            </p>
-         </div>
-      </div>
-   );
-};
 
 const Landing = () => {
-   const [isModalOpen, setIsModalOpen] = useState(false);
-
-   const openModal = () => {
-      setIsModalOpen(true);
-   };
-
-   const closeModal = () => {
-      setIsModalOpen(false);
-   };
-
    return (
       <>
-         <Navbar openModal={openModal} />
+         <Navbar />
          <HeroSection />
          <LogosAndTrustSection />
          <HowItWorks />
          <ServicesPreviewSection />
-         <FeaturesAndCTABanner openModal={openModal} />
-         <GetStartedModal isOpen={isModalOpen} closeModal={closeModal} />
+         <FeaturesAndCTABanner />
          <Footer />
       </>
    );

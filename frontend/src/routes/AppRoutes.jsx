@@ -11,6 +11,12 @@ import Services from "../pages/Services";
 import Book from "../pages/Book";
 import MyBookings from "../pages/MyBookings";
 
+// New Role Pages
+import CreateBusiness from "../pages/business/CreateBusiness";
+import BusinessDashboard from "../pages/business/BusinessDashboard";
+import AdminUsers from "../pages/admin/AdminUsers";
+import AdminTransactions from "../pages/admin/AdminTransactions";
+
 const AppRoutes = () => {
    return (
       <Routes>
@@ -26,13 +32,26 @@ const AppRoutes = () => {
 
          <Route element={<ProtectedRoute />}>
             <Route path="/user/profile" element={<Profile />} />
+            <Route path="/create-business" element={<CreateBusiness />} />
          </Route>
 
-         <Route element={<ProtectedRoute allowedRoles={['customer']} />}>
+         {/* Customer Routes */}
+         <Route element={<ProtectedRoute allowedRoles={['customer', 'business_owner', 'admin']} />}>
             <Route path="/services/book" element={<Book />} />
             <Route path="/user/my-bookings" element={<MyBookings />} />
          </Route>
-         
+
+         {/* Business Owner Routes */}
+         <Route element={<ProtectedRoute allowedRoles={['business_owner', 'admin']} />}>
+            <Route path="/business/dashboard" element={<BusinessDashboard />} />
+         </Route>
+
+         {/* Platform Admin Routes */}
+         <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/transactions" element={<AdminTransactions />} />
+         </Route>
+
          <Route path="*" element={<NotFound />} />
       </Routes>
    );

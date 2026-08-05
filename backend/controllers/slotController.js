@@ -1,25 +1,24 @@
 import * as slotModel from '../models/slotModel.js';
+import * as businessModel from '../models/businessModel.js';
 import { generateSlots } from '../utils/slotGenerator.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
 
 // ============================================================
-//  GET /api/slots?date=2025-02-10
-//  Public — customer sees available slots for a date
+//  GET /api/slots?date=2025-02-10&business_id=1
 // ============================================================
 const getAvailableSlots = async (req, res, next) => {
    try {
-      const { date } = req.query;
+      const { date, business_id } = req.query;
 
       if (!date) {
          return sendError(res, 'Date is required as a query parameter', 400);
       }
 
-      // Validate date format
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
          return sendError(res, 'Date must be in YYYY-MM-DD format.', 400);
       }
 
-      const slots = await slotModel.getAvailableSlots(date);
+      const slots = await slotModel.getAvailableSlots(date, business_id ? parseInt(business_id) : null);
       return sendSuccess(res, 'Available slots fetched.', slots);
 
    } catch (err) {
@@ -29,17 +28,22 @@ const getAvailableSlots = async (req, res, next) => {
 
 // ============================================================
 //  GET /api/slots/admin?date=2025-02-10
-//  Admin only — sees ALL slots for a date (any status)
 // ============================================================
 const getAllSlotsByDate = async (req, res, next) => {
    try {
-      const { date } = req.query;
+      const { date, business_id } = req.query;
 
       if (!date) {
          return sendError(res, 'Date is required as a query parameter.', 400);
       }
 
-      const slots = await slotModel.getSlotsByDate(date);
+      let targetBusinessId = business_id ? parseInt(business_id) : req.business?.id;
+      if (!targetBusinessId && req.user?.id) {
+         const userBiz = await businessModel.getBusinessByOwnerId(req.user.id);
+         if (userBiz) targetBusinessId = userBiz.id;
+      }
+
+      const slots = await slotModel.getSlotsByDate(date, targetBusinessId);
       return sendSuccess(res, 'Slots fetched.', slots);
 
    } catch (err) {
@@ -49,20 +53,26 @@ const getAllSlotsByDate = async (req, res, next) => {
 
 // ============================================================
 //  POST /api/slots/generate
-//  Admin only — generate slots from a time range
+//  Business Owner & Admin — generate slots from a time range
 // ============================================================
 const generateAndInsertSlots = async (req, res, next) => {
    try {
-      const { date, start_time, end_time, duration_min, max_capacity } = req.body;
+      const { date, start_time, end_time, duration_min, max_capacity, business_id } = req.body;
 
-      // Check date is not in the past
       const today = new Date().toISOString().split('T')[0];
       if (date < today) {
          return sendError(res, 'Cannot generate slots for a past date.', 400);
       }
 
-      // Generate slot objects using the algorithm
-      // generateSlots throws if times are invalid
+      let targetBusinessId = business_id;
+      if (!targetBusinessId && req.business) {
+         targetBusinessId = req.business.id;
+      }
+      if (!targetBusinessId && req.user?.id) {
+         const userBiz = await businessModel.getBusinessByOwnerId(req.user.id);
+         if (userBiz) targetBusinessId = userBiz.id;
+      }
+
       let slots;
       try {
          slots = generateSlots({ date, start_time, end_time, duration_min, max_capacity });
@@ -74,12 +84,11 @@ const generateAndInsertSlots = async (req, res, next) => {
          return sendError(res, 'No slots could be generated from the given time range.', 400);
       }
 
-      // Bulk insert into DB
-      const insertedCount = await slotModel.bulkInsertSlots(slots, req.user.id);
+      const insertedCount = await slotModel.bulkInsertSlots(slots, req.user.id, targetBusinessId);
 
       return sendSuccess(
          res,
-         `${insertedCount} slot(s) generated successfully.`,
+         `${insertedCount} slot(s) generated successfully for your business.`,
          { count: insertedCount, slots },
          201
       );
@@ -91,7 +100,6 @@ const generateAndInsertSlots = async (req, res, next) => {
 
 // ============================================================
 //  POST /api/slots/block
-//  Admin only — block a specific slot
 // ============================================================
 const blockSlot = async (req, res, next) => {
    try {
@@ -110,7 +118,13 @@ const blockSlot = async (req, res, next) => {
          return sendError(res, 'Cannot block a slot that already has bookings.', 400);
       }
 
-      await slotModel.blockSlot(slot_id);
+      let targetBusinessId = req.business?.id;
+      if (!targetBusinessId && req.user?.id) {
+         const userBiz = await businessModel.getBusinessByOwnerId(req.user.id);
+         if (userBiz) targetBusinessId = userBiz.id;
+      }
+
+      await slotModel.blockSlot(slot_id, targetBusinessId);
       return sendSuccess(res, 'Slot blocked successfully.');
 
    } catch (err) {
@@ -120,7 +134,6 @@ const blockSlot = async (req, res, next) => {
 
 // ============================================================
 //  DELETE /api/slots/:id
-//  Admin only — delete a slot (only if no bookings)
 // ============================================================
 const deleteSlot = async (req, res, next) => {
    try {
@@ -131,9 +144,14 @@ const deleteSlot = async (req, res, next) => {
          return sendError(res, 'Slot not found.', 404);
       }
 
-      const result = await slotModel.deleteSlot(id);
+      let targetBusinessId = req.business?.id;
+      if (!targetBusinessId && req.user?.id) {
+         const userBiz = await businessModel.getBusinessByOwnerId(req.user.id);
+         if (userBiz) targetBusinessId = userBiz.id;
+      }
 
-      // affectedRows = 0 means booked_count > 0, deletion was blocked
+      const result = await slotModel.deleteSlot(id, targetBusinessId);
+
       if (result.affectedRows === 0) {
          return sendError(res, 'Cannot delete a slot that has existing bookings.', 400);
       }
@@ -151,4 +169,4 @@ export {
    generateAndInsertSlots,
    blockSlot,
    deleteSlot
-}
+};

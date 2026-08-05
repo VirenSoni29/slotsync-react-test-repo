@@ -160,9 +160,6 @@
    color: #fff;
 }
 
-.btn-edit i {
-   font-size: 0.95rem;
-}
 
 /* ── Info rows ── */
 .info-view {
@@ -193,10 +190,6 @@
    font-weight: 400;
 }
 
-.info-label i {
-   font-size: 1rem;
-   color: var(--clr-text-3);
-}
 
 .info-value {
    font-family: var(--font-body);
@@ -266,10 +259,6 @@
    color: var(--clr-text);
 }
 
-.quick-link i {
-   font-size: 1rem;
-   color: var(--clr-accent-2);
-}
 
 .quick-link .arrow {
    margin-left: auto;
@@ -373,9 +362,6 @@
    color: var(--clr-text-2);
 }
 
-.toggle-pw i {
-   font-size: 1rem;
-}
 
 /* Password input needs right padding for toggle button */
 .input-wrap input[type="password"],
@@ -399,44 +385,6 @@
    gap: 10px;
 }
 
-/* ── Form message (success / error banner) ── */
-.form-message {
-   padding: 10px 14px;
-   border-radius: var(--radius);
-   font-family: var(--font-body);
-   font-size: 0.875rem;
-   font-weight: 500;
-}
-
-.form-message.success {
-   background: rgba(34, 211, 165, 0.1);
-   border: 1px solid rgba(34, 211, 165, 0.25);
-   color: var(--clr-green);
-}
-
-.form-message.error {
-   background: rgba(248, 113, 113, 0.1);
-   border: 1px solid rgba(248, 113, 113, 0.25);
-   color: var(--clr-red);
-}
-
-/* ── Button size modifier ── */
-.btn-sm {
-   padding: 9px 20px;
-   font-size: 0.875rem;
-}
-
-/* ── Spinner on submit buttons ── */
-.btn-loader .spin {
-   display: inline-block;
-   animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-   to {
-      transform: rotate(360deg);
-   }
-}
 
 /* ── Utility ── */
 .hidden {

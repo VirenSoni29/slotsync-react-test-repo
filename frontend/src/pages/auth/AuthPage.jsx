@@ -1,10 +1,8 @@
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import "../../css/main.css";
 import "../../css/auth.css";
-import Navbar from "../../components/Navbar";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-   Building04Icon,
    CalendarCheckIn01Icon,
    Call02Icon,
    CheckmarkCircle01Icon,
@@ -35,16 +33,9 @@ const AuthNavbar = ({ mode }) => {
                   Sign up
                </Link>
             </span>
-         ) : mode === "register" ? (
-            <span className="auth-nav-hint">
-               Already have an account?{" "}
-               <Link className="a" to="/auth/login">
-                  Log in
-               </Link>
-            </span>
          ) : (
             <span className="auth-nav-hint">
-               Already registered?{" "}
+               Already have an account?{" "}
                <Link className="a" to="/auth/login">
                   Log in
                </Link>
@@ -123,38 +114,6 @@ const LeftDecorativePanel = ({ mode }) => {
                   </div>
                </div>
             )}
-            {mode === "business-register" && (
-               <div className="panel-content">
-                  <div className="panel-tag">For Businesses</div>
-                  <h2>
-                     Start accepting
-                     <br />
-                     bookings today.
-                  </h2>
-                  <p>
-                     Set up your business on SlotSync in minutes. Manage slots,
-                     track revenue, and let customers book themselves.
-                  </p>
-                  <div className="panel-features">
-                     <div className="panel-feature">
-                        <HugeiconsIcon icon={CheckmarkCircle01Icon} />
-                        <span>Full admin dashboard</span>
-                     </div>
-                     {/* <div className="panel-feature">
-                        <HugeiconsIcon icon={CheckmarkCircle01Icon} />
-                        <span>Automated email reminders</span>
-                     </div> */}
-                     <div className="panel-feature">
-                        <HugeiconsIcon icon={CheckmarkCircle01Icon} />
-                        <span>Razorpay payment integration</span>
-                     </div>
-                     <div className="panel-feature">
-                        <HugeiconsIcon icon={CheckmarkCircle01Icon} />
-                        <span>Revenue & booking analytics</span>
-                     </div>
-                  </div>
-               </div>
-            )}
             <div className="panel-bg">
                <div className="panel-circle c1"></div>
                <div className="panel-circle c2"></div>
@@ -179,21 +138,14 @@ const authModes = {
       buttonText: "Create Account",
       fields: ["name", "email", "phone", "password"],
    },
-   "business-register": {
-      pageTitle: "Business Register",
-      title: "Register your business",
-      subtitle: "Create your admin account to get started",
-      buttonText: "Create Business Account",
-      fields: ["businessName", "name", "email", "phone", "password"],
-   },
 };
 
 const RightAuthPanel = ({ mode }) => {
-   const currentMode = authModes[mode];
+   const currentMode = authModes[mode] || authModes.register;
    const navigate = useNavigate();
    const location = useLocation();
    const from = location.state?.from?.pathname;
-   const { login, register } = useAuth();
+   const { login, register, sendOtpToVerify } = useAuth();
 
    const createInitialFormData = (fields) => {
       const data = {};
@@ -241,7 +193,7 @@ const RightAuthPanel = ({ mode }) => {
             .email("Enter a valid email!"),
          password: passwordSchema,
       };
-      if (mode === "register" || mode === "business-register") {
+      if (mode === "register") {
          baseSchema.name = yup
             .string()
             .required("Name is required!")
@@ -250,12 +202,6 @@ const RightAuthPanel = ({ mode }) => {
             .string()
             .required("Phone Number is required!")
             .matches(/^\d{10}$/, "Enter a valid 10-digit number!");
-      }
-      if (mode === "business-register") {
-         baseSchema.businessName = yup
-            .string()
-            .required("Business Name is required!")
-            .min(3, "Business Name must be at least 3 characters!");
       }
       return baseSchema;
    };
@@ -364,24 +310,41 @@ const RightAuthPanel = ({ mode }) => {
       if (isValid) {
          try {
             setLoading(true);
-            let data;
             if (mode === "login") {
-
-               data = await login(formData);
-               toast.success(data.message);
-               await delay(2000);
-               navigate(from || "/", { replace: true });
-
+               try {
+                  const data = await login(formData);
+                  toast.success(data.message || "Logged in successfully!");
+                  await delay(1000);
+                  navigate(from || "/", { replace: true });
+               } catch (err) {
+                  const msg = err.response?.data?.message || err.message || "";
+                  // Check if the account is not verified
+                  if (
+                     msg.toLowerCase().includes("not verified") ||
+                     msg.toLowerCase().includes("verify your email") ||
+                     (err.response?.status === 401 && msg.toLowerCase().includes("verify"))
+                  ) {
+                     toast.info("Account is not verified yet. Sending verification code...");
+                     try {
+                        await sendOtpToVerify({ email: formData.email, purpose: "register" });
+                     } catch (otpErr) {
+                        console.log("Send OTP response:", otpErr);
+                     }
+                     sessionStorage.setItem("pendingEmail", formData.email);
+                     sessionStorage.setItem("otpPurpose", "register");
+                     toast.success("Verification code sent! Please verify your email.");
+                     navigate("/auth/verify-otp");
+                     return;
+                  }
+                  toast.error(msg);
+               }
             } else if (mode === "register") {
-
-               data = await register(formData);
-               toast.success(data.message);
+               const data = await register(formData);
+               toast.success(data.message || "Account created! Verification code sent.");
                sessionStorage.setItem("pendingEmail", formData.email);
                sessionStorage.setItem("otpPurpose", "register");
-
                navigate("/auth/verify-otp");
             }
-
          } catch (err) {
             toast.error(err.response?.data?.message || err.message);
          } finally {
@@ -404,78 +367,39 @@ const RightAuthPanel = ({ mode }) => {
          </div>
 
          <div className="auth-fields">
-            {mode === "business-register" && (
+            {mode !== "login" && (
                <div className="field-group">
-                  <label htmlFor="businessName">Business Name</label>
-                  <div className={getFieldInputWrapClassName("businessName")}>
+                  <label htmlFor="name">Full Name</label>
+                  <div className={getFieldInputWrapClassName("name")}>
                      <HugeiconsIcon
-                        icon={Building04Icon}
+                        icon={User03Icon}
                         className="input-icon"
                      />
                      <input
                         type="text"
-                        id="businessName"
-                        name="businessName"
-                        placeholder="e.g. Sharma's Salon"
-                        autoComplete="organization"
-                        value={formData.businessName}
+                        id="name"
+                        name="name"
+                        placeholder="Rahul Sharma"
+                        autoComplete="name"
+                        value={formData.name}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        maxLength={50}
+                        maxLength={30}
                         onKeyDown={(e) => {
                            if (e.key === "Enter") handleSubmit();
                         }}
                      />
                   </div>
                   <span
-                     className={`field-error ${errors.businessName ? "show" : ""}`}
+                     className={`field-error ${errors.name ? "show" : ""}`}
                   >
-                     {errors.businessName || ""}
+                     {errors.name || ""}
                   </span>
                </div>
             )}
 
-            {mode !== "login" && (
-               <div className={mode === "register" && "field-row"}>
-                  <div className="field-group">
-                     <label htmlFor="name">
-                        {mode === "business-register" && "Owner's"} Full Name
-                     </label>
-                     <div className={getFieldInputWrapClassName("name")}>
-                        <HugeiconsIcon
-                           icon={User03Icon}
-                           className="input-icon"
-                        />
-                        <input
-                           type="text"
-                           id="name"
-                           name="name"
-                           placeholder="Rahul Sharma"
-                           autoComplete="name"
-                           value={formData.name}
-                           onChange={handleChange}
-                           onBlur={handleBlur}
-                           maxLength={30}
-                           onKeyDown={(e) => {
-                              if (e.key === "Enter") handleSubmit();
-                           }}
-                        />
-                     </div>
-                     <span
-                        className={`field-error ${errors.name ? "show" : ""}`}
-                     >
-                        {errors.name || ""}
-                     </span>
-                  </div>
-               </div>
-            )}
-
             <div className="field-group">
-               <label htmlFor="email">
-                  {mode === "business-register"
-                     ? "Business Email"
-                     : "Email Address"}
-               </label>
+               <label htmlFor="email">Email Address</label>
                <div className={getFieldInputWrapClassName("email")}>
                   <HugeiconsIcon icon={Mail01Icon} className="input-icon" />
                   <input
@@ -483,16 +407,12 @@ const RightAuthPanel = ({ mode }) => {
                      id="email"
                      name="email"
                      inputMode="email"
-                     placeholder={
-                        mode === "business-register"
-                           ? "hello@yourbusiness.com"
-                           : "rahul@example.com"
-                     }
+                     placeholder="rahul@example.com"
                      autoComplete="email"
                      value={formData.email}
                      onChange={handleChange}
                      onBlur={handleBlur}
-                     maxLength={60}
+                     maxLength={40}
                      onKeyDown={(e) => {
                         if (e.key === "Enter") handleSubmit();
                      }}
@@ -613,17 +533,6 @@ const RightAuthPanel = ({ mode }) => {
                   New to SlotSync?{" "}
                   <Link to="/auth/register">Create a free account</Link>
                </p>
-
-               <div className="auth-divider">
-                  <span>or</span>
-               </div>
-
-               <p className="auth-switch">
-                  Want to manage appointments using SlotSync?{" "}
-                  <Link to="/auth/business-register">
-                     Create a free business account
-                  </Link>
-               </p>
             </>
          ) : (
             <p className="auth-terms">
@@ -637,18 +546,19 @@ const RightAuthPanel = ({ mode }) => {
 
 const AuthPage = () => {
    const { mode } = useParams();
+   const activeMode = authModes[mode] ? mode : "register";
 
    useEffect(() => {
-      document.title = `${authModes[mode].pageTitle} - SlotSync`;
-   }, [mode]);
+      document.title = `${authModes[activeMode].pageTitle} - SlotSync`;
+   }, [activeMode]);
 
    return (
       <div className="auth-page">
-         <AuthNavbar mode={mode} />
+         <AuthNavbar mode={activeMode} />
          <main className="auth-main">
-            <LeftDecorativePanel mode={mode} />
+            <LeftDecorativePanel mode={activeMode} />
             <div className="auth-form-wrap">
-               <RightAuthPanel mode={mode} key={mode} />
+               <RightAuthPanel mode={activeMode} key={activeMode} />
             </div>
          </main>
       </div>

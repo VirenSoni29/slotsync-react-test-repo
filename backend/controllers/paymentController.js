@@ -4,11 +4,11 @@ import * as userModel from '../models/userModel.js';
 import * as mailService from '../services/mailService.js';
 import { createOrder, verifySignature } from '../services/paymentService.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
+import config from '../config/config.js';
 
 // ============================================================
 //  POST /api/payment/create-order
-//  Customer only
-//  Creates a Razorpay order for a pending booking
+//  Creates a Razorpay payment order
 // ============================================================
 const createPaymentOrder = async (req, res, next) => {
    try {
@@ -22,7 +22,7 @@ const createPaymentOrder = async (req, res, next) => {
          return sendError(res, 'Booking not found', 404);
       }
 
-      if (booking.user_id !== req.user.id) {
+      if (booking.user_id !== req.user.id && req.user.role !== 'admin') {
          return sendError(res, 'Access Denied', 403);
       }
 
@@ -35,23 +35,29 @@ const createPaymentOrder = async (req, res, next) => {
          return sendError(res, 'This booking is already paid', 400);
       }
 
+      // Create Razorpay Order
       const order = await createOrder({
          amount: booking.price,
          bookingId: booking_id
       });
 
-      await paymentModel.createPayment({
-         booking_id,
-         razorpay_order_id: order.id,
-         amount: booking.price
-      });
+      if (!existingPayment) {
+         await paymentModel.createPayment({
+            booking_id,
+            business_id: booking.business_id,
+            razorpay_order_id: order.id,
+            amount: booking.price,
+            payment_status: 'pending',
+            payment_method: 'razorpay'
+         });
+      }
 
-      return sendSuccess(res, 'Order created successfully.', {
+      return sendSuccess(res, 'Razorpay order created successfully.', {
          order_id: order.id,
          amount: order.amount,
          currency: order.currency,
          booking_id,
-         key_id: process.env.RAZORPAY_KEY_ID
+         key_id: config.RAZORPAY_KEY_ID
       });
 
    } catch (error) {
@@ -61,10 +67,8 @@ const createPaymentOrder = async (req, res, next) => {
 
 // ============================================================
 //  POST /api/payment/verify
-//  Customer only
 //  Verifies Razorpay signature after payment
 // ============================================================
-
 const verifyPayment = async (req, res, next) => {
    try {
       const { booking_id, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
@@ -94,13 +98,17 @@ const verifyPayment = async (req, res, next) => {
       const booking = await bookingModel.getBookingById(booking_id);
       const user = await userModel.findById(req.user.id);
 
-      await mailService.sendBookingConfirmation(user.email, {
-         name: user.name,
-         serviceName: booking.service_name,
-         date: booking.date,
-         startTime: booking.start_time,
-         price: booking.price
-      });
+      try {
+         await mailService.sendBookingConfirmation(user.email, {
+            name: user.name,
+            serviceName: booking.service_name,
+            date: booking.date,
+            startTime: booking.start_time,
+            price: booking.price
+         });
+      } catch (mailErr) {
+         console.error('Email dispatch warning:', mailErr.message);
+      }
 
       return sendSuccess(res, 'Payment verified. Booking confirmed.', {
          booking_id,
@@ -120,7 +128,6 @@ const getPaymentHistory = async (req, res, next) => {
    try {
       const bookings = await bookingModel.getBookingsByUser(req.user.id);
 
-      // Fetch payment for each booking
       const history = await Promise.all(
          bookings.map(async (booking) => {
             const payment = await paymentModel.getPaymentByBookingId(booking.id);

@@ -9,7 +9,7 @@ import {
    sendOtp,
    verifyOtp,
 } from "../services/authService.js";
-import { clearAccessToken, setAccessToken } from "../services/tokenService";
+import { clearAccessToken, setAccessToken, subscribeAccessToken } from "../services/tokenService";
 import { toast } from "sonner";
 
 const AuthContext = createContext();
@@ -18,6 +18,16 @@ const AuthProvider = ({ children }) => {
    const [user, setUser] = useState(null);
    const [accessToken, setAccessTokenState] = useState(null);
    const [loading, setLoading] = useState(true);
+
+   useEffect(() => {
+      const unsubscribe = subscribeAccessToken((newToken) => {
+         setAccessTokenState(newToken);
+         if (!newToken) {
+            setUser(null);
+         }
+      });
+      return unsubscribe;
+   }, []);
 
    const login = async (formData) => {
       const responseData = await loginUser(formData);
@@ -110,6 +120,9 @@ const AuthProvider = ({ children }) => {
       accessToken,
       loading,
       isAuthenticated: !!user,
+      isAdmin: user?.role === 'admin',
+      isBusinessOwner: user?.role === 'business_owner',
+      isCustomer: user?.role === 'customer',
       login,
       register,
       logout,

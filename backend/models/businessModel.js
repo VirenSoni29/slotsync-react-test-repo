@@ -1,53 +1,129 @@
 import db from '../config/db.js';
 
-// ============================================================
-//  businessModel.js
-//  Single-business profile — always at most one row in the
-//  business_profile table (PostgreSQL).
-//
-//  getProfile   → used by admin dashboard, and optionally by
-//                 the public landing page to show business info
-//  upsertProfile → INSERT the first time, UPDATE every time after
-// ============================================================
-
-// ── GET the business profile (returns null if not set up yet) ──
+// Get single profile (for backward compatibility if owner_id not passed, or first active)
 const getProfile = async () => {
    const { rows } = await db.query(
-      'SELECT * FROM business_profile LIMIT 1'
+      'SELECT * FROM business_profile WHERE is_approved = TRUE ORDER BY id ASC LIMIT 1'
    );
    return rows[0] || null;
 };
 
-// ── INSERT first time, UPDATE on every subsequent call ──
-//    Works because there is always only one row (id = 1).
-//    Using ON CONFLICT (id) DO UPDATE keeps the query idempotent.
-const upsertProfile = async ({ name, tagline, email, phone, address, category, website }) => {
+// Get business by owner_id (user ID)
+const getBusinessByOwnerId = async (ownerId) => {
+   const { rows } = await db.query(
+      'SELECT * FROM business_profile WHERE owner_id = $1',
+      [ownerId]
+   );
+   return rows[0] || null;
+};
+
+// Get business by ID
+const getBusinessById = async (id) => {
+   const { rows } = await db.query(
+      'SELECT * FROM business_profile WHERE id = $1',
+      [id]
+   );
+   return rows[0] || null;
+};
+
+// Get business by Slug
+const getBusinessBySlug = async (slug) => {
+   const { rows } = await db.query(
+      'SELECT * FROM business_profile WHERE slug = $1 AND is_approved = TRUE',
+      [slug]
+   );
+   return rows[0] || null;
+};
+
+// Get all approved businesses (for customer browsing & search)
+const getAllBusinesses = async () => {
+   const { rows } = await db.query(
+      `SELECT b.*, u.name AS owner_name, u.email AS owner_email
+       FROM business_profile b
+       JOIN users u ON b.owner_id = u.id
+       WHERE b.is_approved = TRUE
+       ORDER BY b.created_at DESC`
+   );
+   return rows;
+};
+
+// Get all businesses (for platform admin)
+const getAllBusinessesAdmin = async () => {
+   const { rows } = await db.query(
+      `SELECT b.*, u.name AS owner_name, u.email AS owner_email
+       FROM business_profile b
+       LEFT JOIN users u ON b.owner_id = u.id
+       ORDER BY b.created_at DESC`
+   );
+   return rows;
+};
+
+// Create a new business entry (linked to owner_id)
+const createBusiness = async ({ owner_id, name, tagline, email, phone, address, category, website, slug }) => {
+   const generatedSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+   
    const { rows } = await db.query(
       `INSERT INTO business_profile
-          (id, name, tagline, email, phone, address, category, website)
+          (owner_id, name, tagline, email, phone, address, category, website, slug)
        VALUES
-          (1, $1, $2, $3, $4, $5, $6, $7)
-       ON CONFLICT (id) DO UPDATE SET
-          name     = EXCLUDED.name,
-          tagline  = EXCLUDED.tagline,
-          email    = EXCLUDED.email,
-          phone    = EXCLUDED.phone,
-          address  = EXCLUDED.address,
-          category = EXCLUDED.category,
-          website  = EXCLUDED.website
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
+         owner_id,
          name,
-         tagline ?? null,
-         email ?? null,
-         phone ?? null,
-         address ?? null,
-         category ?? null,
-         website ?? null
+         tagline || null,
+         email || null,
+         phone || null,
+         address || null,
+         category || null,
+         website || null,
+         generatedSlug
       ]
    );
-
    return rows[0];
 };
 
-export { getProfile, upsertProfile };
+// Update an existing business profile by owner_id or id
+const updateBusiness = async (id, { name, tagline, email, phone, address, category, website, slug }) => {
+   const { rows } = await db.query(
+      `UPDATE business_profile SET
+          name     = COALESCE($1, name),
+          tagline  = COALESCE($2, tagline),
+          email    = COALESCE($3, email),
+          phone    = COALESCE($4, phone),
+          address  = COALESCE($5, address),
+          category = COALESCE($6, category),
+          website  = COALESCE($7, website),
+          slug     = COALESCE($8, slug),
+          updated_at = CURRENT_TIMESTAMP
+       WHERE id = $9
+       RETURNING *`,
+      [name, tagline, email, phone, address, category, website, slug, id]
+   );
+   return rows[0];
+};
+
+// Legacy upsert profile compatibility helper
+const upsertProfile = async (data) => {
+   if (data.owner_id) {
+      const existing = await getBusinessByOwnerId(data.owner_id);
+      if (existing) {
+         return await updateBusiness(existing.id, data);
+      } else {
+         return await createBusiness(data);
+      }
+   }
+   return await getProfile();
+};
+
+export {
+   getProfile,
+   getBusinessByOwnerId,
+   getBusinessById,
+   getBusinessBySlug,
+   getAllBusinesses,
+   getAllBusinessesAdmin,
+   createBusiness,
+   updateBusiness,
+   upsertProfile
+};

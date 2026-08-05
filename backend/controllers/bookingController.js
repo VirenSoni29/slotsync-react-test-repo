@@ -65,6 +65,7 @@ const createBooking = async (req, res, next) => {
          user_id,
          service_id,
          slot_id,
+         business_id: service.business_id,
          notes
       });
 

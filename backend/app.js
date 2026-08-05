@@ -8,11 +8,13 @@ import { rateLimiter } from './middleware/rateLimiter.js';
 import errorHandler from './middleware/errorHandler.js';
 
 import authRoutes from './routes/authRoutes.js';
+import businessRoutes from './routes/businessRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
 import slotRoutes from './routes/slotRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import config from './config/config.js';
 
 const app = express();
 
@@ -22,7 +24,7 @@ const app = express();
 // ============================================================
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: config.FRONTEND_URL,
     credentials: true
 }));
 
@@ -41,6 +43,7 @@ app.use(cookieParser());
 // ============================================================
 
 app.use('/api/auth', authRoutes);
+app.use('/api/business', businessRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/slots', slotRoutes);
 app.use('/api/bookings', bookingRoutes);

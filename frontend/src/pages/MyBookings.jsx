@@ -2,35 +2,14 @@ import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
-import '../css/main.css';
-import '../css/my-bookings.css';
+import "../css/main.css";
+import "../css/my-bookings.css";
 import { cancelBooking, getAllBookings } from "../services/bookingService.js";
 import { toast } from "sonner";
+import { formatBookingDateCard } from "../helpers/formatDate";
+import formatTime from "../helpers/formatTime.js";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon, Calendar02Icon, ClipboardCheck, Clock01Icon } from "@hugeicons/core-free-icons";
-
-// ── Helpers (pure functions, kept outside the component) ──
-const formatDate = (dateStr) => {
-   const d = new Date(dateStr + "T00:00:00");
-   return {
-      day: d.getDate(),
-      month: d.toLocaleString("en-IN", { month: "short" }),
-      full: d.toLocaleDateString("en-IN", {
-         weekday: "short",
-         day: "numeric",
-         month: "short",
-         year: "numeric",
-      }),
-   };
-}
-
-const formatTime = (timeStr) => {
-   const [h, m] = timeStr.split(":");
-   const hour = parseInt(h);
-   const ampm = hour >= 12 ? "PM" : "AM";
-   const hour12 = hour % 12 || 12;
-   return `${hour12}:${m} ${ampm}`;
-}
+import { ArrowRight01Icon, Calendar01Icon, ClipboardCheck, Clock01Icon, Loading01Icon } from "@hugeicons/core-free-icons";
 
 const getStatusBadge = (status) => {
    const map = {
@@ -41,11 +20,11 @@ const getStatusBadge = (status) => {
       failed: { label: "❌ Failed", cls: "status-failed" },
    };
    return map[status] || { label: status, cls: "" };
-}
+};
 
 const canCancel = (status) => {
    return ["confirmed", "pending"].includes(status);
-}
+};
 
 const FILTERS = [
    { key: "all", label: "All" },
@@ -56,7 +35,6 @@ const FILTERS = [
 ];
 
 const MyBookings = () => {
-   // ── State ──
    const [allBookings, setAllBookings] = useState([]);
    const [loading, setLoading] = useState(true);
    const [loadError, setLoadError] = useState(false);
@@ -64,17 +42,17 @@ const MyBookings = () => {
    const [bookingToCancel, setBookingToCancel] = useState(null);
    const [cancelling, setCancelling] = useState(false);
 
-   // ── Fetch bookings ──
    useEffect(() => {
-      let isMounted = true
-      
+      let isMounted = true;
+
       const loadBookings = async () => {
          setLoading(true);
          setLoadError(false);
          try {
-            const responseData = await getAllBookings();
-
-            if (isMounted) setAllBookings(responseData.data || []);
+            const res = await getAllBookings();
+            if (isMounted) {
+               setAllBookings(res.data || []);
+            }
          } catch {
             if (isMounted) setLoadError(true);
          } finally {
@@ -82,12 +60,12 @@ const MyBookings = () => {
          }
       };
 
-      loadBookings()
-
-      return () => isMounted = false
+      loadBookings();
+      return () => {
+         isMounted = false;
+      };
    }, []);
 
-   // ── Derived / filtered bookings ──
    const filteredBookings = useMemo(() => {
       return activeFilter === "all"
          ? allBookings
@@ -97,29 +75,26 @@ const MyBookings = () => {
    const emptyMessage = loadError
       ? "Could not load bookings. Make sure you are logged in."
       : activeFilter === "all"
-        ? "You haven't made any bookings yet."
-        : `No ${activeFilter} bookings found.`;
+      ? "You haven't made any bookings yet."
+      : `No ${activeFilter} bookings found.`;
 
-   // ── Cancel modal handlers ──
    const openCancelModal = (id) => setBookingToCancel(id);
-
-   const closeCancelModal = () => {
-      setBookingToCancel(null);
-   };
+   const closeCancelModal = () => setBookingToCancel(null);
 
    const confirmCancel = async () => {
       if (!bookingToCancel) return;
 
       setCancelling(true);
       try {
-         await cancelBooking(bookingToCancel)
+         await cancelBooking(bookingToCancel);
 
          setAllBookings((prev) =>
             prev.map((b) =>
-               b.id == bookingToCancel ? { ...b, status: "cancelled" } : b,
-            ),
+               b.id === bookingToCancel ? { ...b, status: "cancelled" } : b
+            )
          );
 
+         toast.success("Booking cancelled successfully.");
          setBookingToCancel(null);
       } catch (err) {
          toast.error(err.response?.data?.message || "Could not cancel booking. Try again.");
@@ -141,7 +116,7 @@ const MyBookings = () => {
       <>
          <Navbar />
 
-         {/* ===================== PAGE HEADER ===================== */}
+         {/* Header */}
          <section className="page-header">
             <div className="page-header-inner">
                <div className="section-tag">Dashboard</div>
@@ -150,7 +125,7 @@ const MyBookings = () => {
             </div>
          </section>
 
-         {/* ===================== FILTERS ===================== */}
+         {/* Filters Bar */}
          <section className="bookings-controls">
             <div className="controls-inner">
                <div className="filter-tabs" id="filterTabs">
@@ -158,7 +133,6 @@ const MyBookings = () => {
                      <button
                         key={f.key}
                         className={`filter-tab${activeFilter === f.key ? " active" : ""}`}
-                        data-filter={f.key}
                         onClick={() => setActiveFilter(f.key)}
                      >
                         {f.label}
@@ -168,10 +142,9 @@ const MyBookings = () => {
             </div>
          </section>
 
-         {/* ===================== BOOKINGS LIST ===================== */}
+         {/* Bookings List */}
          <section className="bookings-section">
             <div className="bookings-inner">
-               {/* Loading */}
                {loading && (
                   <div className="bookings-loading" id="bookingsLoading">
                      <div className="loading-spinner"></div>
@@ -179,7 +152,6 @@ const MyBookings = () => {
                   </div>
                )}
 
-               {/* Empty */}
                {showEmpty && (
                   <div className="bookings-empty" id="bookingsEmpty">
                      <div className="empty-icon">📅</div>
@@ -188,11 +160,7 @@ const MyBookings = () => {
                      <Link
                         to="/services"
                         className="btn-primary"
-                        style={{
-                           marginTop: 20,
-                           display: "inline-flex",
-                           gap: 8,
-                        }}
+                        style={{ marginTop: 20, display: "inline-flex", gap: 8 }}
                      >
                         Browse Services
                         <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2.5} size={14.4} />
@@ -200,15 +168,10 @@ const MyBookings = () => {
                   </div>
                )}
 
-               {/* Bookings list */}
                {showList && (
-                  <div
-                     className="bookings-list"
-                     id="bookingsList"
-                     style={{ display: "flex" }}
-                  >
+                  <div className="bookings-list" id="bookingsList" style={{ display: "flex" }}>
                      {filteredBookings.map((b, i) => {
-                        const date = formatDate(b.date);
+                        const date = formatBookingDateCard(b.date);
                         const badge = getStatusBadge(b.status);
 
                         return (
@@ -219,18 +182,22 @@ const MyBookings = () => {
                            >
                               <div className="booking-date-col">
                                  <div className="booking-day">{date.day}</div>
-                                 <div className="booking-month">
-                                    {date.month}
-                                 </div>
+                                 <div className="booking-month">{date.month}</div>
                               </div>
+
                               <div className="booking-info">
                                  <div className="booking-top">
-                                    <span className="booking-service-name">
-                                       {b.service_name}
-                                    </span>
-                                    <span
-                                       className={`booking-status-badge ${badge.cls}`}
-                                    >
+                                    <div>
+                                       <span className="booking-service-name">
+                                          {b.service_name}
+                                       </span>
+                                       {b.business_name && (
+                                          <div className="text-[0.78rem] text-(--clr-accent-2) font-semibold flex items-center gap-1 mt-0.5">
+                                             🏢 {b.business_name}
+                                          </div>
+                                       )}
+                                    </div>
+                                    <span className={`booking-status-badge ${badge.cls}`}>
                                        {badge.label}
                                     </span>
                                  </div>
@@ -240,27 +207,25 @@ const MyBookings = () => {
                                        {formatTime(b.start_time)}
                                     </span>
                                     <span className="booking-meta-item">
-                                       <HugeiconsIcon icon={Calendar02Icon} strokeWidth={2} />
+                                       <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} />
                                        {date.full}
                                     </span>
                                     {b.payment_status === "paid" ? (
                                        <span className="booking-meta-item">
-                                          <HugeiconsIcon icon={ClipboardCheck} strokeWidth={2} />{" "}
-                                          Paid ₹{b.price}
+                                          <HugeiconsIcon icon={ClipboardCheck} strokeWidth={2} /> Paid ₹{b.price}
                                        </span>
                                     ) : (
                                        <span className="booking-meta-item">
-                                          <HugeiconsIcon icon={Clock01Icon} strokeWidth={2} />{" "}
-                                          {b.payment_status}
+                                          <HugeiconsIcon icon={Clock01Icon} strokeWidth={2} /> {b.payment_status}
                                        </span>
                                     )}
                                  </div>
                               </div>
+
                               <div className="booking-actions">
                                  {canCancel(b.status) && (
                                     <button
                                        className="btn-cancel"
-                                       data-id={b.id}
                                        onClick={() => openCancelModal(b.id)}
                                     >
                                        Cancel
@@ -281,7 +246,7 @@ const MyBookings = () => {
             </div>
          </section>
 
-         {/* ===================== CANCEL MODAL ===================== */}
+         {/* Cancel Modal */}
          {bookingToCancel && (
             <div
                className="modal-overlay"
@@ -292,44 +257,32 @@ const MyBookings = () => {
                <div className="modal-card">
                   <div className="modal-icon">❌</div>
                   <h3>Cancel Booking?</h3>
-                  <p>
-                     Are you sure you want to cancel this appointment? This
-                     action cannot be undone.
-                  </p>
+                  <p>Are you sure you want to cancel this appointment? This action cannot be undone.</p>
                   <div className="modal-actions">
                      <button
                         className="btn-outline"
-                        id="cancelModalClose"
                         onClick={closeCancelModal}
                      >
                         Keep Booking
                      </button>
                      <button
                         className="btn-danger"
-                        id="cancelModalConfirm"
                         onClick={confirmCancel}
                         disabled={cancelling}
                      >
-                        <span
-                           id="cancelConfirmText"
-                           style={{ display: cancelling ? "none" : "inline" }}
-                        >
-                           Yes, Cancel
-                        </span>
-                        <span
-                           id="cancelConfirmLoader"
-                           className="btn-spinner"
-                           style={{
-                              display: cancelling ? "inline-block" : "none",
-                           }}
-                        ></span>
+                        {cancelling ? (
+                           <span className="flex items-center gap-2">
+                              <HugeiconsIcon icon={Loading01Icon} className="spin-animation" size={14} /> Cancelling...
+                           </span>
+                        ) : (
+                           <span>Yes, Cancel</span>
+                        )}
                      </button>
                   </div>
                </div>
             </div>
          )}
 
-         {/* ===================== FOOTER ===================== */}
          <Footer />
       </>
    );

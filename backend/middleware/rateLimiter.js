@@ -13,11 +13,11 @@ const rateLimiter = rateLimit({
 
 // Stricter limiter for auth routes (login, OTP)
 const authLimiter = rateLimit({
-   windowMs: 20 * 60 * 1000,  // 20 minutes
+   windowMs: 15 * 60 * 1000,  // 15 minutes
    max: 10,               // only 10 attempts per 20 min
    message: {
       success: false,
-      message: 'Too many attempts, please try again after 20 minutes'
+      message: 'Too many attempts, please try again after 15 minutes'
    }
 });
 

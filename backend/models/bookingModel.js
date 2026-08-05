@@ -1,24 +1,17 @@
-// ============================================================
-//  models/bookingModel.js
-//  All SQL queries for the bookings table (PostgreSQL)
-// ============================================================
-
 import db from '../config/db.js';
 
 // ── Create a booking ──
-// Called inside a transaction — receives connection client, not db pool
-const createBooking = async (connection, { user_id, service_id, slot_id, notes }) => {
+const createBooking = async (connection, { user_id, service_id, slot_id, business_id, notes }) => {
    const { rows } = await connection.query(
-      `INSERT INTO bookings (user_id, service_id, slot_id, status, payment_status, notes)
-       VALUES ($1, $2, $3, 'pending'::booking_status, 'pending'::payment_status, $4)
+      `INSERT INTO bookings (user_id, service_id, slot_id, business_id, status, payment_status, notes)
+       VALUES ($1, $2, $3, $4, 'pending'::booking_status, 'pending'::payment_status, $5)
        RETURNING id`,
-      [user_id, service_id, slot_id, notes || null]
+      [user_id, service_id, slot_id, business_id || null, notes || null]
    );
    return rows[0].id;
 };
 
 // ── Get booking by ID ──
-// Joins users, services, slots for full details
 const getBookingById = async (id) => {
    const { rows } = await db.query(
       `SELECT
@@ -30,6 +23,7 @@ const getBookingById = async (id) => {
          b.reminder_same_day_sent,
          b.created_at,
          b.updated_at,
+         b.business_id,
          u.id         AS user_id,
          u.name       AS user_name,
          u.email      AS user_email,
@@ -41,11 +35,13 @@ const getBookingById = async (id) => {
          sl.id        AS slot_id,
          sl.date,
          sl.start_time,
-         sl.end_time
+         sl.end_time,
+         bp.name      AS business_name
        FROM bookings b
-       JOIN users    u  ON b.user_id    = u.id
-       JOIN services s  ON b.service_id = s.id
-       JOIN slots    sl ON b.slot_id    = sl.id
+       JOIN users            u  ON b.user_id     = u.id
+       JOIN services         s  ON b.service_id  = s.id
+       JOIN slots            sl ON b.slot_id     = sl.id
+       LEFT JOIN business_profile bp ON b.business_id = bp.id
        WHERE b.id = $1`,
       [id]
    );
@@ -65,10 +61,12 @@ const getBookingsByUser = async (userId) => {
          s.price,
          sl.date,
          sl.start_time,
-         sl.end_time
+         sl.end_time,
+         bp.name AS business_name
        FROM bookings b  
-       JOIN services s  ON b.service_id = s.id
-       JOIN slots    sl ON b.slot_id    = sl.id
+       JOIN services         s  ON b.service_id  = s.id
+       JOIN slots            sl ON b.slot_id     = sl.id
+       LEFT JOIN business_profile bp ON (b.business_id = bp.id OR s.business_id = bp.id)
        WHERE b.user_id = $1
        ORDER BY sl.date DESC, sl.start_time DESC`,
       [userId]
@@ -76,7 +74,35 @@ const getBookingsByUser = async (userId) => {
    return rows;
 };
 
-// ── Get all bookings — admin ──
+// ── Get all bookings for a specific Business Owner ──
+const getBookingsByBusiness = async (businessId) => {
+   const { rows } = await db.query(
+      `SELECT
+         b.id,
+         b.status,
+         b.payment_status,
+         b.notes,
+         b.created_at,
+         u.name       AS user_name,
+         u.email      AS user_email,
+         u.phone      AS user_phone,
+         s.service_name,
+         s.price,
+         sl.date,
+         sl.start_time,
+         sl.end_time
+       FROM bookings b  
+       JOIN users    u  ON b.user_id    = u.id
+       JOIN services s  ON b.service_id = s.id
+       JOIN slots    sl ON b.slot_id    = sl.id
+       WHERE (b.business_id = $1 OR s.business_id = $1)
+       ORDER BY sl.date DESC, sl.start_time DESC`,
+      [businessId]
+   );
+   return rows;
+};
+
+// ── Get all bookings — Platform Admin ──
 const getAllBookings = async () => {
    const { rows } = await db.query(
       `SELECT
@@ -90,18 +116,19 @@ const getAllBookings = async () => {
          s.price,
          sl.date,
          sl.start_time,
-         sl.end_time
+         sl.end_time,
+         bp.name      AS business_name
        FROM bookings b
-       JOIN users    u  ON b.user_id    = u.id
-       JOIN services s  ON b.service_id = s.id
-       JOIN slots    sl ON b.slot_id    = sl.id
-       ORDER BY sl.date DESC, sl.start_time DESC`
+       JOIN users            u  ON b.user_id     = u.id
+       JOIN services         s  ON b.service_id  = s.id
+       JOIN slots            sl ON b.slot_id     = sl.id
+       LEFT JOIN business_profile bp ON b.business_id = bp.id
+       ORDER BY b.created_at DESC`
    );
    return rows;
 };
 
 // ── Update booking status ──
-// Used for: confirm, cancel, complete
 const updateBookingStatus = async (id, status) => {
    await db.query(
       'UPDATE bookings SET status = $1::booking_status WHERE id = $2',
@@ -118,7 +145,6 @@ const updatePaymentStatus = async (id, paymentStatus) => {
 };
 
 // ── Mark reminder sent ──
-// Called by cron job after sending reminder email
 const markReminderSent = async (id, type = 'same_day') => {
    const column = type === 'day_before' ? 'reminder_day_before_sent' : 'reminder_same_day_sent';
    await db.query(
@@ -128,8 +154,6 @@ const markReminderSent = async (id, type = 'same_day') => {
 };
 
 // ── Get upcoming bookings that need reminders ──
-// Called by cron job every hour
-// Finds confirmed bookings starting in next 60 min that haven't had a reminder sent
 const getBookingsForReminder = async () => {
    const { rows } = await db.query(
       `SELECT
@@ -155,6 +179,7 @@ export {
    createBooking,
    getBookingById,
    getBookingsByUser,
+   getBookingsByBusiness,
    getAllBookings,
    updateBookingStatus,
    updatePaymentStatus,

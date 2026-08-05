@@ -1,37 +1,27 @@
 import { Router } from 'express';
 
 import * as adminController from '../controllers/adminController.js';
-import * as businessController from '../controllers/businessController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import { isAdmin } from '../middleware/roleMiddleware.js';
 
 const router = Router();
 
-// Apply both middlewares to entire router at once
+// Apply auth and admin check to all admin routes
 router.use(authMiddleware);
 router.use(isAdmin);
 
-// ── Analytics ──
-// GET /api/admin/analytics
+// ── Platform Analytics ──
 router.get('/analytics', adminController.getAnalytics);
-
-// GET /api/admin/peak-hours
 router.get('/peak-hours', adminController.getPeakHours);
-
-// GET /api/admin/popular-services
 router.get('/popular-services', adminController.getPopularServices);
-
-// GET /api/admin/recent-bookings
 router.get('/recent-bookings', adminController.getRecentBookings);
-
-// GET /api/admin/revenue-by-day
 router.get('/revenue-by-day', adminController.getRevenueByDay);
 
-// ── Business profile ──
-// GET /api/admin/business
-router.get('/business', businessController.getProfile);
+// ── User Management ──
+router.get('/users', adminController.getAllUsers);
+router.put('/users/:id/role', adminController.updateUserRole);
 
-// PUT /api/admin/business
-router.put('/business', businessController.updateProfile);
+// ── Global Transactions Ledger ──
+router.get('/transactions', adminController.getAllTransactions);
 
 export default router;

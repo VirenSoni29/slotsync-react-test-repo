@@ -128,26 +128,26 @@ const sendCancellationEmail = async (email, { name, serviceName, date, startTime
    });
 };
 
-// ── Send waitlist notification email ──
-const sendWaitlistEmail = async (email, { name, serviceName, date, startTime }) => {
-   await sendMail({
-      to: email,
-      subject: 'A slot opened up for you — SlotSync',
-      html: `
-            <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0a0a0f; color: #f0f0f8; border-radius: 12px;">
-                <h2 style="color: #6c63ff; margin-bottom: 8px;">SlotSync</h2>
-                <h3 style="color: #fbbf24; margin-bottom: 16px;">🔔 Slot Available</h3>
-                <p style="color: #a0a0b8;">Hi ${name}, a slot you were waiting for just opened up!</p>
-                <div style="background: #16161f; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 20px; margin: 20px 0;">
-                    <p style="margin: 0 0 8px;"><strong>Service:</strong> ${serviceName}</p>
-                    <p style="margin: 0 0 8px;"><strong>Date:</strong> ${date}</p>
-                    <p style="margin: 0;"><strong>Time:</strong> ${startTime}</p>
-                </div>
-                <p style="color: #a0a0b8;">Log in and book it before someone else does. This slot is only held for <strong style="color:#f0f0f8">30 minutes</strong>.</p>
-            </div>
-        `
-   });
-};
+// // ── Send waitlist notification email ──
+// const sendWaitlistEmail = async (email, { name, serviceName, date, startTime }) => {
+//    await sendMail({
+//       to: email,
+//       subject: 'A slot opened up for you — SlotSync',
+//       html: `
+//             <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0a0a0f; color: #f0f0f8; border-radius: 12px;">
+//                 <h2 style="color: #6c63ff; margin-bottom: 8px;">SlotSync</h2>
+//                 <h3 style="color: #fbbf24; margin-bottom: 16px;">🔔 Slot Available</h3>
+//                 <p style="color: #a0a0b8;">Hi ${name}, a slot you were waiting for just opened up!</p>
+//                 <div style="background: #16161f; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 20px; margin: 20px 0;">
+//                     <p style="margin: 0 0 8px;"><strong>Service:</strong> ${serviceName}</p>
+//                     <p style="margin: 0 0 8px;"><strong>Date:</strong> ${date}</p>
+//                     <p style="margin: 0;"><strong>Time:</strong> ${startTime}</p>
+//                 </div>
+//                 <p style="color: #a0a0b8;">Log in and book it before someone else does. This slot is only held for <strong style="color:#f0f0f8">30 minutes</strong>.</p>
+//             </div>
+//         `
+//    });
+// };
 
 // ── Send welcome email ──
 // Triggered once after account is verified
@@ -204,5 +204,5 @@ export {
    sendReminderEmail,
    sendDayBeforeReminder,
    sendCancellationEmail,
-   sendWaitlistEmail
+   // sendWaitlistEmail
 };
